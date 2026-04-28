@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "landingPage": {
+      "title": "Landing Page",
+      "description": "Represents a single landing page created by a user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the landing page."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The ID of the user who owns this page."
+        },
+        "pageName": {
+          "type": "string",
+          "description": "The internal name of the landing page."
+        },
+        "slug": {
+          "type": "string",
+          "description": "The URL-friendly slug for the public page."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published"],
+          "description": "The current status of the page."
+        },
+        "template": {
+          "type": "string",
+          "description": "The ID of the template used for this page."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the page was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the page was last updated."
+        },
+        "publishedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the page was published."
+        }
+      },
+      "required": ["id", "ownerId", "pageName", "slug", "status", "template", "createdAt", "updatedAt"]
+    },
+    "lead": {
+      "title": "Lead",
+      "description": "Represents a lead captured from a landing page form.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the lead."
+        },
+        "pageId": {
+          "type": "string",
+          "description": "The ID of the page where the lead was captured."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The ID of the user who owns the page."
+        },
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "pageId", "ownerId", "email", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/landingPages/{landingPageId}": {
+      "schema": {
+        "$ref": "#/entities/landingPage"
+      },
+      "description": "Stores all landing pages created by users."
+    },
+    "/users/{userId}/leads/{leadId}": {
+      "schema": {
+        "$ref": "#/entities/lead"
+      },
+      "description": "Stores leads collected by a specific user."
+    }
+  }
+}
