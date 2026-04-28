@@ -12,7 +12,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
-import type { LandingPage } from '@/lib/types';
+import type { LandingPage, Lead } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
 export async function createLandingPage(
@@ -94,5 +94,35 @@ export async function getPageBySlug(slug: string): Promise<LandingPage | null> {
   } catch (error) {
     console.error('Error fetching page by slug:', error);
     return null;
+  }
+}
+
+export async function addLead(
+  pageId: string,
+  ownerId: string,
+  leadData: { name?: string; email: string; phone?: string; message?: string }
+) {
+  if (!pageId || !ownerId) {
+    return { error: 'Page or owner information is missing.' };
+  }
+  if (!leadData.email) {
+    return { error: 'Email is a required field.' };
+  }
+
+  const { firestore } = initializeFirebase();
+  const leadsRef = collection(firestore, 'leads');
+
+  try {
+    const newLead: Omit<Lead, 'id'> = {
+      pageId,
+      ownerId,
+      ...leadData,
+      createdAt: serverTimestamp(),
+    };
+    await addDoc(leadsRef, newLead);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error adding lead:", error);
+    return { error: error.message };
   }
 }

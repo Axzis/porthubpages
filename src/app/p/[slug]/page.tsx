@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { ContactForm } from '@/components/landing/contact-form';
 
 // This is the public-facing page for a created landing page.
 export default async function PublicPage({ params }: { params: { slug: string } }) {
@@ -157,12 +156,13 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                           <div className="container mx-auto max-w-xl text-center">
                               <h2 className="text-4xl font-bold font-headline">{contactSection.title}</h2>
                               <p className="mt-4 text-lg text-muted-foreground">{contactSection.description}</p>
-                              <form className="mt-8 space-y-4 text-left">
-                                  <Input placeholder="Name" disabled />
-                                  <Input type="email" placeholder="Email" disabled />
-                                  <Textarea placeholder="Message" disabled />
-                                  <Button className="w-full" disabled>{contactSection.form.submitButtonLabel}</Button>
-                              </form>
+                               <div className="mt-8">
+                                <ContactForm 
+                                  pageId={page.id}
+                                  ownerId={page.ownerId}
+                                  contactSection={contactSection}
+                                />
+                              </div>
                           </div>
                       </section>
                   );
