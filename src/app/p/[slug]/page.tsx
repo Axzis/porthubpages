@@ -188,7 +188,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                       </section>
                   );
               default:
-                return <div key={section.id} className="p-4 my-2 border rounded-md">Unsupported section: {section.type}</div>;
+                return null;
             }
           })}
         </main>
