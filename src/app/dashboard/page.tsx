@@ -25,7 +25,8 @@ export default function DashboardPage() {
     data: landingPages,
     loading,
     error,
-  } = useCollection<LandingPage>('landingPages', user?.uid);
+  } = useCollection<LandingPage>('landingPages', { where: ['ownerId', '==', user?.uid] });
+
   const { toast } = useToast();
   const router = useRouter();
 

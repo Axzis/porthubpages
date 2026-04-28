@@ -29,6 +29,20 @@ export function ContactForm({ pageId, ownerId, contactSection, isPreview = false
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isPreview) return;
+
+    if (contactSection.form.email && !email) {
+      toast({ variant: 'destructive', title: 'Email is required.' });
+      return;
+    }
+    if (contactSection.form.name && !name) {
+      toast({ variant: 'destructive', title: 'Name is required.' });
+      return;
+    }
+     if (contactSection.form.message && !message) {
+      toast({ variant: 'destructive', title: 'Message is required.' });
+      return;
+    }
+
     setLoading(true);
 
     const result = await addLead(pageId, ownerId, {
@@ -69,13 +83,13 @@ export function ContactForm({ pageId, ownerId, contactSection, isPreview = false
       {contactSection.form.name && (
         <div className="space-y-2">
             <Label htmlFor="contact-name">Name</Label>
-            <Input id="contact-name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input id="contact-name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
       )}
       {contactSection.form.email && (
         <div className="space-y-2">
             <Label htmlFor="contact-email">Email</Label>
-            <Input id="contact-email" type="email" placeholder="Your Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="contact-email" type="email" placeholder="Your Email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
       )}
       {contactSection.form.phone && (
@@ -87,7 +101,7 @@ export function ContactForm({ pageId, ownerId, contactSection, isPreview = false
       {contactSection.form.message && (
         <div className="space-y-2">
             <Label htmlFor="contact-message">Message</Label>
-            <Textarea id="contact-message" placeholder="Your Message" value={message} onChange={(e) => setMessage(e.target.value)} required />
+            <Textarea id="contact-message" placeholder="Your Message" value={message} onChange={(e) => setMessage(e.target.value)} />
         </div>
       )}
       <Button type="submit" className="w-full" disabled={loading || isPreview}>

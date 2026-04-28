@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc } from '@/firebase';
+import { useDoc, useCollection } from '@/firebase';
 import { updateLandingPage } from '@/lib/firestore-actions';
 import { uploadImage } from '@/app/actions/cloudinary';
-import type { LandingPage, LandingSection, HeroSection, FeatureSection, GallerySection, TestimonialSection, PricingSection, FAQSection, ContactSection, CTASection, AboutSection } from '@/lib/types';
+import type { LandingPage, LandingSection, HeroSection, FeatureSection, GallerySection, TestimonialSection, PricingSection, FAQSection, ContactSection, CTASection, AboutSection, Lead } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -19,6 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Save, ExternalLink, ArrowLeft, PlusCircle, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,7 @@ import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 type SectionWithDefault = Omit<LandingSection, 'id' | 'enabled' | 'order'>;
 
@@ -52,6 +54,7 @@ export default function EditorPage() {
   const { toast } = useToast();
 
   const { data: initialPage, loading, error } = useDoc<LandingPage>('landingPages', pageId);
+  const { data: leads, loading: leadsLoading } = useCollection<Lead>('leads', { where: ['pageId', '==', pageId] });
 
   const [page, setPage] = useState<LandingPage | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -400,6 +403,40 @@ export default function EditorPage() {
                       </SelectContent>
                     </Select>
                   </div>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="leads" className="border rounded-lg bg-card">
+              <AccordionTrigger className="p-4"><h3 className="font-semibold text-lg">Leads ({leads.length})</h3></AccordionTrigger>
+              <AccordionContent className="p-4">
+                {leadsLoading ? (
+                   <div className="flex justify-center"><Loader2 className="animate-spin"/></div>
+                ) : leads.length === 0 ? (
+                  <p className="text-muted-foreground text-center">No leads captured yet.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Message</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leads.map(lead => (
+                        <TableRow key={lead.id}>
+                          <TableCell className="text-xs">
+                             {lead.createdAt && format(new Date((lead.createdAt as any).seconds * 1000), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell>{lead.email}</TableCell>
+                          <TableCell>{lead.name || '-'}</TableCell>
+                          <TableCell className="truncate max-w-[100px]">{lead.message || '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </AccordionContent>
             </AccordionItem>
 

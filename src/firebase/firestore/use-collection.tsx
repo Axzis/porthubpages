@@ -15,9 +15,13 @@ interface DocumentData {
   [key: string]: any;
 }
 
+type UseCollectionOptions = {
+    where?: [string, '==', any];
+}
+
 export function useCollection<T extends DocumentData>(
   collectionName: string,
-  uid?: string | null
+  options?: UseCollectionOptions
 ) {
   const firestore = useFirestore();
   const [data, setData] = useState<T[]>([]);
@@ -33,8 +37,8 @@ export function useCollection<T extends DocumentData>(
     let q: Query | CollectionReference;
     const collectionRef = collection(firestore, collectionName);
 
-    if (uid) {
-      q = query(collectionRef, where('ownerId', '==', uid));
+    if (options?.where && options.where[2]) {
+      q = query(collectionRef, where(...options.where));
     } else {
       q = collectionRef;
     }
@@ -56,7 +60,7 @@ export function useCollection<T extends DocumentData>(
     );
 
     return () => unsubscribe();
-  }, [firestore, collectionName, uid]);
+  }, [firestore, collectionName, options?.where?.[0], options?.where?.[1], options?.where?.[2]]);
 
   return { data, loading, error };
 }
