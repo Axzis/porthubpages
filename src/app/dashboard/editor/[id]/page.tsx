@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection } from '@/firebase';
-import { updateLandingPage } from '@/lib/firestore-actions';
+import { updateLandingPage, markLeadsAsRead } from '@/lib/firestore-actions';
 import { uploadImage } from '@/app/actions/cloudinary';
 import type { LandingPage, LandingSection, HeroSection, FeatureSection, GallerySection, TestimonialSection, PricingSection, FAQSection, ContactSection, CTASection, AboutSection, Lead } from '@/lib/types';
 import {
@@ -32,6 +32,8 @@ import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 type SectionWithDefault = Omit<LandingSection, 'id' | 'enabled' | 'order'>;
 
@@ -60,6 +62,7 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
   const [uploadingStates, setUploadingStates] = useState<Record<string, boolean>>({});
+  const [openAccordions, setOpenAccordions] = useState<string[]>(['page-settings']);
 
   useEffect(() => {
     if (initialPage) {
@@ -69,8 +72,25 @@ export default function EditorPage() {
       });
     }
   }, [initialPage]);
+
+  useEffect(() => {
+    // When leads accordion is opened, mark visible leads as read
+    if (openAccordions.includes('leads')) {
+      const unreadLeadIds = leads.filter(lead => !lead.isRead).map(lead => lead.id);
+      if (unreadLeadIds.length > 0) {
+        markLeadsAsRead(unreadLeadIds).catch(err => {
+          console.error("Failed to mark leads as read:", err);
+          toast({
+            variant: "destructive",
+            title: "Error updating leads",
+            description: "Could not mark leads as read."
+          })
+        });
+      }
+    }
+}, [openAccordions, leads, toast]);
   
-  const isSetupComplete = page?.pageName !== 'My New Page';
+  const isSetupComplete = page?.pageName && page.pageName !== 'My New Page';
 
   const handleFieldChange = (field: keyof LandingPage, value: any) => {
     setPage(prev => prev ? { ...prev, [field]: value } : null);
@@ -340,6 +360,8 @@ export default function EditorPage() {
       )}
     </div>
   );
+  
+  const unreadLeadsCount = leads.filter(l => !l.isRead).length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(420px,1.2fr)_2fr] gap-8 items-start h-[calc(100vh-8rem)]">
@@ -373,7 +395,7 @@ export default function EditorPage() {
         </div>
 
         <div className="overflow-y-auto flex-grow pr-4 -mr-4">
-          <Accordion type="multiple" className="w-full space-y-4">
+          <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions} className="w-full space-y-4">
             
             <AccordionItem value="page-settings" className="border rounded-lg bg-card">
               <AccordionTrigger className="p-4"><h3 className="font-semibold text-lg">Page Settings</h3></AccordionTrigger>
@@ -407,7 +429,14 @@ export default function EditorPage() {
             </AccordionItem>
             
             <AccordionItem value="leads" className="border rounded-lg bg-card">
-              <AccordionTrigger className="p-4"><h3 className="font-semibold text-lg">Leads ({leads.length})</h3></AccordionTrigger>
+              <AccordionTrigger className="p-4 w-full">
+                <div className="flex justify-between items-center w-full">
+                    <h3 className="font-semibold text-lg">Leads ({leads.length})</h3>
+                    {unreadLeadsCount > 0 && (
+                        <Badge>{unreadLeadsCount} new</Badge>
+                    )}
+                </div>
+              </AccordionTrigger>
               <AccordionContent className="p-4">
                 {leadsLoading ? (
                    <div className="flex justify-center"><Loader2 className="animate-spin"/></div>
@@ -417,6 +446,7 @@ export default function EditorPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-8"></TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Name</TableHead>
@@ -426,6 +456,11 @@ export default function EditorPage() {
                     <TableBody>
                       {leads.map(lead => (
                         <TableRow key={lead.id}>
+                          <TableCell>
+                            {!lead.isRead && (
+                                <div className="h-2 w-2 rounded-full bg-primary" title="Unread"></div>
+                            )}
+                          </TableCell>
                           <TableCell className="text-xs">
                              {lead.createdAt && format(new Date((lead.createdAt as any).seconds * 1000), 'MMM d, yyyy')}
                           </TableCell>

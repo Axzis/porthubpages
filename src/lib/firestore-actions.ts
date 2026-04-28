@@ -10,6 +10,7 @@ import {
   where,
   getDocs,
   limit,
+  writeBatch,
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { LandingPage, Lead } from '@/lib/types';
@@ -117,6 +118,7 @@ export async function addLead(
       pageId,
       ownerId,
       ...leadData,
+      isRead: false,
       createdAt: serverTimestamp(),
     };
     await addDoc(leadsRef, newLead);
@@ -125,4 +127,25 @@ export async function addLead(
     console.error("Error adding lead:", error);
     return { error: error.message };
   }
+}
+
+export async function markLeadsAsRead(leadIds: string[]) {
+    if (!leadIds || leadIds.length === 0) {
+        return { success: true };
+    }
+    const { firestore } = initializeFirebase();
+    const batch = writeBatch(firestore);
+
+    leadIds.forEach((id) => {
+        const leadRef = doc(firestore, 'leads', id);
+        batch.update(leadRef, { isRead: true });
+    });
+
+    try {
+        await batch.commit();
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error marking leads as read:", error);
+        return { error: error.message };
+    }
 }

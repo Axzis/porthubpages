@@ -118,6 +118,10 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates if the lead has been read by the owner."
         }
       },
       "required": ["pageId", "ownerId", "email", "createdAt"]

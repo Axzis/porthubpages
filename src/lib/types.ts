@@ -157,6 +157,7 @@ export type Lead = {
     phone?: string;
     message?: string;
     createdAt: any; // Firestore timestamp
+    isRead?: boolean;
 };
 
 
