@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc } from '@/firebase';
 import { updateLandingPage } from '@/lib/firestore-actions';
-import type { LandingPage } from '@/lib/types';
+import type { LandingPage, HeroSection } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -12,6 +12,12 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Loader2, Save, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function EditorPage() {
   const params = useParams();
@@ -30,6 +37,8 @@ export default function EditorPage() {
 
   const [pageName, setPageName] = useState('');
   const [slug, setSlug] = useState('');
+  const [headline, setHeadline] = useState('');
+  const [subheadline, setSubheadline] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
   
@@ -40,14 +49,49 @@ export default function EditorPage() {
     if (page) {
       setPageName(page.pageName);
       setSlug(page.slug);
+
+      const heroSection = page.sections?.find(s => s.type === 'hero') as HeroSection | undefined;
+      if (heroSection) {
+        setHeadline(heroSection.headline || '');
+        setSubheadline(heroSection.subheadline || '');
+      }
     }
   }, [page]);
   
   const handleSave = async (showToast: boolean = true) => {
+    if (!page) return false;
     setIsSaving(true);
+
+    const currentSections = page.sections || [];
+    const heroSectionIndex = currentSections.findIndex(s => s.type === 'hero');
+    let newSections = [...currentSections];
+
+    if (heroSectionIndex > -1) {
+      // Update existing hero section
+      const existingHero = newSections[heroSectionIndex] as HeroSection;
+      newSections[heroSectionIndex] = {
+          ...existingHero,
+          headline,
+          subheadline
+      };
+    } else {
+        // Create new hero section
+        newSections.push({
+            id: 'hero',
+            type: 'hero',
+            enabled: true,
+            order: 1,
+            headline,
+            subheadline,
+            primaryCta: { label: 'Get Started', url: '#' },
+        } as HeroSection);
+    }
+
+
     const result = await updateLandingPage(pageId, {
       pageName,
       slug,
+      sections: newSections,
     });
     setIsSaving(false);
 
@@ -169,32 +213,64 @@ export default function EditorPage() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Page Settings</CardTitle>
-            <CardDescription>Manage your page details.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="pageName">Page Name</Label>
-              <Input
-                id="pageName"
-                value={pageName}
-                onChange={(e) => setPageName(e.target.value)}
-                placeholder="My Awesome Page"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="my-awesome-page"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <Accordion type="single" collapsible defaultValue="page-settings" className="w-full">
+          <AccordionItem value="page-settings">
+            <AccordionTrigger>
+              <div className="flex flex-col items-start text-left">
+                <h3 className="font-semibold">Page Settings</h3>
+                <p className="text-sm font-normal text-muted-foreground">Manage your page name and URL.</p>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pageName">Page Name</Label>
+                  <Input
+                    id="pageName"
+                    value={pageName}
+                    onChange={(e) => setPageName(e.target.value)}
+                    placeholder="My Awesome Page"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug</Label>
+                  <Input
+                    id="slug"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="my-awesome-page"
+                  />
+                </div>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="hero-section">
+            <AccordionTrigger>
+              <div className="flex flex-col items-start text-left">
+                <h3 className="font-semibold">Hero Section</h3>
+                <p className="text-sm font-normal text-muted-foreground">The first thing your visitors will see.</p>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="headline">Headline</Label>
+                <Input
+                  id="headline"
+                  value={headline}
+                  onChange={(e) => setHeadline(e.target.value)}
+                  placeholder="Your Compelling Headline"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subheadline">Subheadline</Label>
+                <Textarea
+                  id="subheadline"
+                  value={subheadline}
+                  onChange={(e) => setSubheadline(e.target.value)}
+                  placeholder="A short description that explains more."
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       {/* Preview Panel */}
