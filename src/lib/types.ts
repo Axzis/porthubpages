@@ -144,7 +144,7 @@ export type Lead = {
     pageId: string;
     ownerId: string;
     name?: string;
-    email?: string;
+    email: string;
     phone?: string;
     message?: string;
     createdAt: any; // Firestore timestamp

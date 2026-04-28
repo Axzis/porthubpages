@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useDoc } from '@/firebase';
-import type { LandingPage } from '@/lib/types';
+import type { LandingPage, HeroSection } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
 // This is a minimal renderer for the live preview iframe.
@@ -29,7 +29,7 @@ export default function PreviewPage() {
   }
   
   // Find the hero section to display
-  const heroSection = page.sections?.find(s => s.type === 'hero');
+  const heroSection = page.sections?.find(s => s.type === 'hero') as HeroSection | undefined;
 
   return (
     <div className="flex flex-col min-h-screen font-body bg-background text-foreground">

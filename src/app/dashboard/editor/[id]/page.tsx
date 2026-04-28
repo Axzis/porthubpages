@@ -185,10 +185,10 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(380px,1fr)_2fr] gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(380px,1fr)_2fr] gap-8 items-start h-[calc(100vh-8rem)]">
       {/* Editor Panel */}
-      <div className="lg:col-span-1 flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
+      <div className="lg:col-span-1 flex flex-col gap-6 h-full">
+        <div className="flex items-center justify-between gap-4 flex-shrink-0">
           <Button variant="outline" size="icon" onClick={() => router.push('/dashboard')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -208,71 +208,73 @@ export default function EditorPage() {
           </Button>
         </div>
 
-        <Accordion type="single" collapsible defaultValue="page-settings" className="w-full">
-          <AccordionItem value="page-settings">
-            <AccordionTrigger>
-              <div className="flex flex-col items-start text-left">
-                <h3 className="font-semibold">Page Settings</h3>
-                <p className="text-sm font-normal text-muted-foreground">Manage your page name and URL.</p>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-4 space-y-4">
+        <div className="overflow-y-auto flex-grow pr-4 -mr-4">
+            <Accordion type="single" collapsible defaultValue="page-settings" className="w-full">
+            <AccordionItem value="page-settings">
+                <AccordionTrigger>
+                <div className="flex flex-col items-start text-left">
+                    <h3 className="font-semibold">Page Settings</h3>
+                    <p className="text-sm font-normal text-muted-foreground">Manage your page name and URL.</p>
+                </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 space-y-4">
+                    <div className="space-y-2">
+                    <Label htmlFor="pageName-main">Page Name</Label>
+                    <Input
+                        id="pageName-main"
+                        value={pageName}
+                        onChange={(e) => setPageName(e.target.value)}
+                        placeholder="My Awesome Page"
+                    />
+                    </div>
+                    <div className="space-y-2">
+                    <Label htmlFor="slug-main">Slug</Label>
+                    <Input
+                        id="slug-main"
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value)}
+                        placeholder="my-awesome-page"
+                    />
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="hero-section">
+                <AccordionTrigger>
+                <div className="flex flex-col items-start text-left">
+                    <h3 className="font-semibold">Hero Section</h3>
+                    <p className="text-sm font-normal text-muted-foreground">The first thing your visitors will see.</p>
+                </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pageName-main">Page Name</Label>
-                  <Input
-                    id="pageName-main"
-                    value={pageName}
-                    onChange={(e) => setPageName(e.target.value)}
-                    placeholder="My Awesome Page"
-                  />
+                    <Label htmlFor="headline">Headline</Label>
+                    <Input
+                    id="headline"
+                    value={headline}
+                    onChange={(e) => setHeadline(e.target.value)}
+                    placeholder="Your Compelling Headline"
+                    />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="slug-main">Slug</Label>
-                  <Input
-                    id="slug-main"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    placeholder="my-awesome-page"
-                  />
+                    <Label htmlFor="subheadline">Subheadline</Label>
+                    <Textarea
+                    id="subheadline"
+                    value={subheadline}
+                    onChange={(e) => setSubheadline(e.target.value)}
+                    placeholder="A short description that explains more."
+                    />
                 </div>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="hero-section">
-            <AccordionTrigger>
-              <div className="flex flex-col items-start text-left">
-                <h3 className="font-semibold">Hero Section</h3>
-                <p className="text-sm font-normal text-muted-foreground">The first thing your visitors will see.</p>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="headline">Headline</Label>
-                <Input
-                  id="headline"
-                  value={headline}
-                  onChange={(e) => setHeadline(e.target.value)}
-                  placeholder="Your Compelling Headline"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subheadline">Subheadline</Label>
-                <Textarea
-                  id="subheadline"
-                  value={subheadline}
-                  onChange={(e) => setSubheadline(e.target.value)}
-                  placeholder="A short description that explains more."
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+                </AccordionContent>
+            </AccordionItem>
+            </Accordion>
+        </div>
       </div>
 
       {/* Preview Panel */}
-      <div className="lg:col-span-1 hidden lg:block">
-        <div className="sticky top-24">
-            <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+      <div className="lg:col-span-1 hidden lg:block h-full">
+        <div className="sticky top-20 h-[calc(100vh-7rem)]">
+            <Card className="h-full flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
                 <CardTitle>Live Preview</CardTitle>
                 <Button variant="outline" size="sm" asChild>
                 <Link href={`/p/${page.slug}`} target="_blank">
@@ -281,8 +283,8 @@ export default function EditorPage() {
                 </Link>
                 </Button>
             </CardHeader>
-            <CardContent className="p-0">
-                <div className="h-[calc(100vh-11rem-4rem)] w-full rounded-b-lg border bg-muted overflow-hidden">
+            <CardContent className="p-0 flex-grow">
+                <div className="h-full w-full rounded-b-lg border bg-muted overflow-hidden">
                     <iframe
                     key={previewKey}
                     src={`/p/preview/${pageId}`}

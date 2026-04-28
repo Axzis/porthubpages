@@ -5,10 +5,6 @@
       "description": "Represents a single landing page created by a user.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the landing page."
-        },
         "ownerId": {
           "type": "string",
           "description": "The ID of the user who owns this page."
@@ -44,19 +40,60 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp when the page was published."
+        },
+        "brand": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "logoUrl": {
+              "type": "string"
+            }
+          }
+        },
+        "seo": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "ogImageUrl": {
+              "type": "string"
+            }
+          }
+        },
+        "style": {
+          "type": "object",
+          "properties": {
+            "primaryColor": {
+              "type": "string"
+            },
+            "font": {
+              "type": "string"
+            },
+            "layout": {
+              "type": "string"
+            }
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         }
       },
-      "required": ["id", "ownerId", "pageName", "slug", "status", "template", "createdAt", "updatedAt"]
+      "required": ["ownerId", "pageName", "slug", "status", "template", "createdAt", "updatedAt"]
     },
     "lead": {
       "title": "Lead",
       "description": "Represents a lead captured from a landing page form.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the lead."
-        },
         "pageId": {
           "type": "string",
           "description": "The ID of the page where the lead was captured."
@@ -83,7 +120,7 @@
           "format": "date-time"
         }
       },
-      "required": ["id", "pageId", "ownerId", "email", "createdAt"]
+      "required": ["pageId", "ownerId", "email", "createdAt"]
     }
   },
   "auth": {
@@ -96,11 +133,11 @@
       },
       "description": "Stores all landing pages created by users."
     },
-    "/users/{userId}/leads/{leadId}": {
+    "/leads/{leadId}": {
       "schema": {
         "$ref": "#/entities/lead"
       },
-      "description": "Stores leads collected by a specific user."
+      "description": "Stores leads captured from public landing page forms."
     }
   }
 }

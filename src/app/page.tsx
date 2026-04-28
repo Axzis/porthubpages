@@ -41,7 +41,7 @@ export default function Home() {
       <main className="flex-grow">
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 text-center py-20 lg:py-32">
           <h1 className="font-headline text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-            Create Landing Pages That Convert
+            Build high-converting landing pages in minutes.
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
             PortHub Pages helps you create, customize, and publish landing pages for products, services, events, and campaigns—without coding.

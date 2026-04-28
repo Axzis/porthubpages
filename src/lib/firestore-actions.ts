@@ -29,8 +29,8 @@ export async function createLandingPage(
   try {
     const newPageData: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt' | 'publishedAt'> = {
       ownerId: userId,
-      pageName: pageData.pageName || 'Untitled Page',
-      slug: pageData.slug || `untitled-page-${Date.now()}`,
+      pageName: pageData.pageName || 'My New Page',
+      slug: `untitled-page-${Date.now()}`,
       status: 'draft',
       template: pageData.template || 'blank',
       brand: { name: 'My Brand' },

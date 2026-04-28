@@ -7,17 +7,21 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+    
+    function isPublished(pageId) {
+      return get(/databases/$(database)/documents/landingPages/$(pageId)).data.status == 'published';
+    }
 
     // Rules for landingPages
     match /landingPages/{landingPageId} {
-      allow read: if true; // Publicly readable
-      allow create, update: if isOwner(request.resource.data.ownerId);
-      allow delete: if isOwner(resource.data.ownerId);
+      allow read: if resource.data.status == 'published' || (request.auth != null && isOwner(resource.data.ownerId));
+      allow create, update, delete: if request.auth != null && isOwner(request.resource.data.ownerId);
     }
 
     // Rules for leads
-    match /users/{userId}/leads/{leadId} {
-      allow read, write: if isOwner(userId);
+    match /leads/{leadId} {
+      allow create: if isPublished(request.resource.data.pageId);
+      allow read: if request.auth != null && isOwner(request.resource.data.ownerId);
     }
   }
 }
