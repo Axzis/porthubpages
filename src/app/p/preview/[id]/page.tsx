@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ContactForm } from '@/components/landing/contact-form';
+import { AOSInitializer } from '@/components/landing/aos-initializer';
 
 
 // This is a minimal renderer for the live preview iframe.
@@ -41,13 +42,14 @@ export default function PreviewPage() {
 
   return (
     <div className={`${themeClass} flex flex-col min-h-screen font-body bg-background text-foreground`}>
+        <AOSInitializer />
         <main className="flex-grow">
           {(page.sections || []).filter(s => s.enabled).map(section => {
             switch (section.type) {
               case 'hero':
                 const heroSection = section as HeroSection;
                 return (
-                  <section key={section.id} className="text-center py-20 px-4">
+                  <section key={section.id} data-aos="fade-up" className="text-center py-20 px-4">
                     <h1 className="text-5xl font-bold font-headline">{heroSection.headline}</h1>
                     {heroSection.subheadline && <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto">{heroSection.subheadline}</p>}
                     {heroSection.imageUrl && (
@@ -60,7 +62,7 @@ export default function PreviewPage() {
               case 'features':
                 const featuresSection = section as FeatureSection;
                 return (
-                  <section key={section.id} className="py-20 px-4 bg-secondary">
+                  <section key={section.id} data-aos="fade-up" className="py-20 px-4 bg-secondary">
                     <div className="container mx-auto text-center">
                       <h2 className="text-4xl font-bold font-headline">{featuresSection.title}</h2>
                       {featuresSection.description && <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{featuresSection.description}</p>}
@@ -83,7 +85,7 @@ export default function PreviewPage() {
               case 'gallery':
                 const gallerySection = section as GallerySection;
                 return (
-                    <section key={section.id} className="py-20 px-4">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4">
                         <div className="container mx-auto text-center">
                             <h2 className="text-4xl font-bold font-headline">{gallerySection.title}</h2>
                             <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -99,7 +101,7 @@ export default function PreviewPage() {
               case 'testimonials':
                 const testimonialsSection = section as TestimonialSection;
                 return (
-                    <section key={section.id} className="py-20 px-4 bg-secondary">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4 bg-secondary">
                         <div className="container mx-auto text-center">
                             <h2 className="text-4xl font-bold font-headline">{testimonialsSection.title}</h2>
                             <div className="mt-12 grid gap-8 md:grid-cols-3">
@@ -125,7 +127,7 @@ export default function PreviewPage() {
               case 'pricing':
                 const pricingSection = section as PricingSection;
                 return (
-                    <section key={section.id} className="py-20 px-4">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4">
                         <div className="container mx-auto text-center">
                             <h2 className="text-4xl font-bold font-headline">{pricingSection.title}</h2>
                             <div className="mt-12 grid gap-8 md:grid-cols-3 items-start">
@@ -152,7 +154,7 @@ export default function PreviewPage() {
               case 'faq':
                 const faqSection = section as FAQSection;
                 return (
-                    <section key={section.id} className="py-20 px-4 bg-secondary">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4 bg-secondary">
                         <div className="container mx-auto max-w-3xl">
                             <h2 className="text-4xl font-bold font-headline text-center">{faqSection.title}</h2>
                             <Accordion type="single" collapsible className="mt-12 w-full">
@@ -169,7 +171,7 @@ export default function PreviewPage() {
               case 'contact':
                 const contactSection = section as ContactSection;
                 return (
-                    <section key={section.id} className="py-20 px-4">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4">
                         <div className="container mx-auto max-w-xl text-center">
                              <h2 className="text-4xl font-bold font-headline">{contactSection.title}</h2>
                             <p className="mt-4 text-lg text-muted-foreground">{contactSection.description}</p>
@@ -187,7 +189,7 @@ export default function PreviewPage() {
               case 'cta':
                 const ctaSection = section as CTASection;
                 return (
-                    <section key={section.id} className="py-20 px-4 bg-primary text-primary-foreground">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4 bg-primary text-primary-foreground">
                         <div className="container mx-auto text-center">
                             <h2 className="text-4xl font-bold font-headline">{ctaSection.title}</h2>
                             <p className="mt-4 text-lg max-w-2xl mx-auto opacity-90">{ctaSection.description}</p>
@@ -198,7 +200,7 @@ export default function PreviewPage() {
               case 'about':
                 const aboutSection = section as AboutSection;
                 return (
-                    <section key={section.id} className="py-20 px-4">
+                    <section key={section.id} data-aos="fade-up" className="py-20 px-4">
                         <div className="container mx-auto max-w-3xl">
                             <h2 className="text-4xl font-bold font-headline text-center">{aboutSection.title}</h2>
                             <div className="mt-8 text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">{aboutSection.content}</div>
