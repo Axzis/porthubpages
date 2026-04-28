@@ -31,6 +31,7 @@ export async function createLandingPage(
     const newPageData: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt' | 'publishedAt'> = {
       ownerId: userId,
       pageName: pageData.pageName || 'My New Page',
+      pagePurpose: 'A new landing page.',
       slug: `untitled-page-${Date.now()}`,
       status: 'draft',
       template: pageData.template || 'blank',
@@ -65,10 +66,17 @@ export async function updateLandingPage(
   const pageRef = doc(firestore, 'landingPages', pageId);
 
   try {
-    await updateDoc(pageRef, {
+    const updatePayload: { [key: string]: any } = {
       ...data,
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    if (data.status === 'published') {
+      updatePayload.publishedAt = serverTimestamp();
+    }
+    
+    await updateDoc(pageRef, updatePayload);
+    
     revalidatePath('/dashboard');
     revalidatePath(`/dashboard/editor/${pageId}`);
     if (data.slug) {

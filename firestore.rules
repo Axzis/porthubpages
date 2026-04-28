@@ -21,7 +21,7 @@ service cloud.firestore {
     // Rules for leads
     match /leads/{leadId} {
       allow create: if isPublished(request.resource.data.pageId);
-      allow read: if request.auth != null && isOwner(request.resource.data.ownerId);
+      allow read: if request.auth != null && isOwner(resource.data.ownerId);
     }
   }
 }

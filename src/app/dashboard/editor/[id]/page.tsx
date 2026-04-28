@@ -20,7 +20,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Save, ExternalLink, ArrowLeft, PlusCircle, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Save, ExternalLink, ArrowLeft, PlusCircle, Trash2, Image as ImageIcon, Share } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { AiSuggestionButton } from '@/components/ai/ai-suggestion-button';
 
 type SectionWithDefault = Omit<LandingSection, 'id' | 'enabled' | 'order'>;
 
@@ -74,7 +75,6 @@ export default function EditorPage() {
   }, [initialPage]);
 
   useEffect(() => {
-    // When leads accordion is opened, mark visible leads as read
     if (openAccordions.includes('leads')) {
       const unreadLeadIds = leads.filter(lead => !lead.isRead).map(lead => lead.id);
       if (unreadLeadIds.length > 0) {
@@ -105,9 +105,9 @@ export default function EditorPage() {
     setPage(prevPage => {
         if (!prevPage) return null;
         const newPage = structuredClone(prevPage);
-        let section = newPage.sections.find(s => s.type === sectionType);
-        if (section) {
-            (section as any)[field] = value;
+        const sectionIndex = newPage.sections.findIndex(s => s.type === sectionType);
+        if (sectionIndex > -1) {
+            (newPage.sections[sectionIndex] as any)[field] = value;
         }
         return newPage;
     });
@@ -183,7 +183,6 @@ export default function EditorPage() {
 
       if (enabled) {
         if (sectionIndex === -1) {
-          // Add section if it doesn't exist
           const newSection: LandingSection = {
             id: sectionType,
             order: newPage.sections.length + 1,
@@ -192,11 +191,9 @@ export default function EditorPage() {
           } as LandingSection;
           newPage.sections.push(newSection);
         } else {
-          // Enable section if it exists
           newPage.sections[sectionIndex].enabled = true;
         }
       } else {
-        // Disable section
         if (sectionIndex > -1) {
           newPage.sections[sectionIndex].enabled = false;
         }
@@ -220,6 +217,7 @@ export default function EditorPage() {
   
     const result = await updateLandingPage(pageId, {
       pageName: page.pageName,
+      pagePurpose: page.pagePurpose,
       slug: page.slug,
       sections: page.sections,
       style: page.style,
@@ -249,7 +247,6 @@ export default function EditorPage() {
     if (!page) return;
     const newStatus = published ? 'published' : 'draft';
 
-    // Optimistic UI update
     setPage(p => p ? { ...p, status: newStatus } : null);
 
     const result = await updateLandingPage(pageId, { status: newStatus, slug: page.slug });
@@ -260,7 +257,6 @@ export default function EditorPage() {
         title: 'Update failed',
         description: result.error,
       });
-      // Revert on error
       setPage(p => p ? { ...p, status: page.status } : null);
     } else {
       toast({
@@ -268,6 +264,13 @@ export default function EditorPage() {
       });
     }
   };
+
+  const handleShare = () => {
+    if (!page) return;
+    const url = `${window.location.origin}/p/${page.slug}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Link Copied!', description: 'Public URL copied to clipboard.' });
+  }
 
   if (loading) {
     return (
@@ -317,7 +320,7 @@ export default function EditorPage() {
                     <Input
                         id="slug"
                         value={page.slug.startsWith('untitled-page-') ? '' : page.slug}
-                        onChange={(e) => handleFieldChange('slug', e.target.value)}
+                        onChange={(e) => handleSlugChange(e.target.value)}
                         placeholder="e.g. my-awesome-product"
                     />
                     <p className="text-sm text-muted-foreground">
@@ -374,9 +377,12 @@ export default function EditorPage() {
             <h1 className="text-2xl font-bold font-headline truncate" title={page.pageName}>
               {page.pageName}
             </h1>
-            <p className="text-sm text-muted-foreground truncate">/p/{page.slug}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <Share className="mr-2 h-4 w-4"/>
+              Share
+            </Button>
             <div className="flex items-center space-x-2">
               <Switch
                 id="publish-status"
@@ -406,7 +412,13 @@ export default function EditorPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="slug-main">Slug</Label>
-                    <Input id="slug-main" value={page.slug} onChange={(e) => handleFieldChange('slug', e.target.value)} />
+                    <Input id="slug-main" value={page.slug} onChange={(e) => handleSlugChange(e.target.value)} />
+                    <p className="text-sm text-muted-foreground">Public URL: /p/{page.slug}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pagePurpose">Page Purpose (for AI)</Label>
+                    <Input id="pagePurpose" value={page.pagePurpose || ''} onChange={(e) => handleFieldChange('pagePurpose', e.target.value)} placeholder="e.g., 'Sell a new SaaS product for project management'"/>
+                    <p className="text-xs text-muted-foreground">Describe your page's goal to get better AI suggestions.</p>
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="theme">Theme</Label>
@@ -484,13 +496,48 @@ export default function EditorPage() {
                   case 'hero': return heroSection && (
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="headline">Headline</Label>
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="headline">Headline</Label>
+                           <AiSuggestionButton 
+                              pagePurpose={page.pagePurpose || ''}
+                              onSuggestions={(suggestions) => {
+                                  handleSectionChange('hero', 'headline', suggestions.headlineSuggestion);
+                                  handleSectionChange('hero', 'subheadline', suggestions.subheadlineSuggestion || '');
+                                  handleSectionChange('hero', 'primaryCta', { ...heroSection.primaryCta, label: suggestions.primaryCtaLabelSuggestion });
+                                  if (suggestions.secondaryCtaLabelSuggestion) {
+                                      handleSectionChange('hero', 'secondaryCta', { ...(heroSection.secondaryCta || { url: '#' }), label: suggestions.secondaryCtaLabelSuggestion });
+                                  }
+                              }}
+                          />
+                        </div>
                         <Input id="headline" value={heroSection.headline} onChange={e => handleSectionChange('hero', 'headline', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="subheadline">Subheadline</Label>
                         <Textarea id="subheadline" value={heroSection.subheadline || ''} onChange={e => handleSectionChange('hero', 'subheadline', e.target.value)} />
                       </div>
+                      <Card className="p-4 bg-muted/50">
+                          <h4 className="font-semibold mb-2 text-sm">Primary CTA</h4>
+                          <div className="space-y-2">
+                              <Label>Label</Label>
+                              <Input value={heroSection.primaryCta.label} onChange={e => handleSectionChange('hero', 'primaryCta', {...heroSection.primaryCta, label: e.target.value})}/>
+                          </div>
+                          <div className="space-y-2 mt-2">
+                              <Label>URL</Label>
+                              <Input value={heroSection.primaryCta.url} onChange={e => handleSectionChange('hero', 'primaryCta', {...heroSection.primaryCta, url: e.target.value})} placeholder="https://"/>
+                          </div>
+                      </Card>
+                      <Card className="p-4 bg-muted/50">
+                          <h4 className="font-semibold mb-2 text-sm">Secondary CTA (Optional)</h4>
+                          <div className="space-y-2">
+                              <Label>Label</Label>
+                              <Input value={heroSection.secondaryCta?.label || ''} onChange={e => handleSectionChange('hero', 'secondaryCta', {...(heroSection.secondaryCta || {label: '', url: ''}), label: e.target.value})}/>
+                          </div>
+                          <div className="space-y-2 mt-2">
+                              <Label>URL</Label>
+                              <Input value={heroSection.secondaryCta?.url || ''} onChange={e => handleSectionChange('hero', 'secondaryCta', {...(heroSection.secondaryCta || {label: '', url: ''}), url: e.target.value})} placeholder="https://"/>
+                          </div>
+                      </Card>
                       {renderImageUploader(
                         'hero-image',
                         heroSection.imageUrl,
@@ -603,6 +650,7 @@ export default function EditorPage() {
                               <div className="space-y-2"><Label>Price</Label><Input value={plan.price} onChange={e => handleSectionItemChange('pricing', index, 'price', e.target.value)}/></div>
                               <div className="space-y-2"><Label>Features (one per line)</Label><Textarea value={(plan.features || []).join('\n')} onChange={e => handleSectionItemChange('pricing', index, 'features', e.target.value.split('\n'))}/></div>
                               <div className="space-y-2"><Label>CTA Label</Label><Input value={plan.ctaLabel} onChange={e => handleSectionItemChange('pricing', index, 'ctaLabel', e.target.value)}/></div>
+                              <div className="space-y-2"><Label>CTA URL</Label><Input value={plan.ctaUrl} onChange={e => handleSectionItemChange('pricing', index, 'ctaUrl', e.target.value)}/></div>
                               <div className="flex items-center space-x-2 pt-2">
                                 <Switch id={`pricing-${index}-highlighted`} checked={!!plan.highlighted} onCheckedChange={checked => handleSectionItemChange('pricing', index, 'highlighted', checked)} />
                                 <Label htmlFor={`pricing-${index}-highlighted`}>Highlight this plan</Label>
@@ -661,7 +709,7 @@ export default function EditorPage() {
                       <div className="space-y-2"><Label>Title</Label><Input value={ctaSection.title} onChange={e => handleSectionChange('cta', 'title', e.target.value)}/></div>
                       <div className="space-y-2"><Label>Description</Label><Textarea value={ctaSection.description} onChange={e => handleSectionChange('cta', 'description', e.target.value)}/></div>
                       <div className="space-y-2"><Label>CTA Label</Label><Input value={ctaSection.cta.label} onChange={e => handleSectionChange('cta', 'cta', {...ctaSection.cta, label: e.target.value})}/></div>
-                      <div className="space-y-2"><Label>CTA URL</Label><Input value={ctaSection.cta.url} onChange={e => handleSectionChange('cta', 'cta', {...ctaSection.cta, url: e.target.value})}/></div>
+                      <div className="space-y-2"><Label>CTA URL</Label><Input value={ctaSection.cta.url} onChange={e => handleSectionChange('cta', 'cta', {...ctaSection.cta, url: e.target.value})} placeholder="https://"/></div>
                     </div>
                   );
                   case 'about': return aboutSection && (
@@ -685,7 +733,7 @@ export default function EditorPage() {
                         />
                         <AccordionTrigger className="w-full text-left ml-4 p-0 hover:no-underline">
                            <label htmlFor={`switch-${sectionType}`} className="font-semibold text-lg capitalize cursor-pointer">
-                             {sectionType}
+                             {sectionType.replace('-', ' ')}
                            </label>
                         </AccordionTrigger>
                     </div>

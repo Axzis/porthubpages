@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  updateProfile,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth as useFirebaseAuth } from '@/firebase';
@@ -35,8 +36,11 @@ export default function SignupPage() {
     e.preventDefault();
     if (!auth) return;
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // TODO: Update user profile with first/last name
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (userCredential.user) {
+        const displayName = `${firstName} ${lastName}`.trim();
+        await updateProfile(userCredential.user, { displayName });
+      }
       toast({ title: 'Signup successful!' });
       router.push('/dashboard');
     } catch (error: any) {

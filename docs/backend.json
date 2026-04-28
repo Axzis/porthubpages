@@ -13,6 +13,10 @@
           "type": "string",
           "description": "The internal name of the landing page."
         },
+        "pagePurpose": {
+            "type": "string",
+            "description": "A brief description of the page's purpose, used for AI content generation."
+        },
         "slug": {
           "type": "string",
           "description": "The URL-friendly slug for the public page."

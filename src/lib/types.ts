@@ -4,6 +4,7 @@ export type LandingPage = {
   id: string;
   ownerId: string;
   pageName: string;
+  pagePurpose?: string;
   slug: string;
   status: "draft" | "published";
   template: string;

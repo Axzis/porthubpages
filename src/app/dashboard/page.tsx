@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection } from '@/firebase';
-import { createLandingPage } from '@/lib/firestore-actions';
+import { createLandingPage, updateLandingPage } from '@/lib/firestore-actions';
 import type { LandingPage, Lead } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -13,11 +14,13 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
-import { PlusCircle, Loader2, Edit, Eye, Mail } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Eye, Mail, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -31,14 +34,17 @@ export default function DashboardPage() {
 
   const { toast } = useToast();
   const router = useRouter();
+  const [isCreating, setIsCreating] = useState(false);
+  const [publishingStates, setPublishingStates] = useState<Record<string, boolean>>({});
 
   const handleCreatePage = async () => {
     if (!user) return;
-
+    setIsCreating(true);
     const result = await createLandingPage(user.uid, {
       pageName: 'My New Page',
       template: 'blank',
     });
+    setIsCreating(false);
 
     if (result.error) {
       toast({
@@ -54,6 +60,19 @@ export default function DashboardPage() {
       router.push(`/dashboard/editor/${result.id}`);
     }
   };
+
+  const handlePublishToggle = async (page: LandingPage, published: boolean) => {
+    setPublishingStates(prev => ({...prev, [page.id]: true}));
+    const newStatus = published ? 'published' : 'draft';
+    const result = await updateLandingPage(page.id, { status: newStatus });
+    
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'Update failed', description: result.error });
+    } else {
+      toast({ title: `Page is now ${newStatus}.` });
+    }
+    setPublishingStates(prev => ({...prev, [page.id]: false}));
+  }
   
   const loading = pagesLoading || leadsLoading;
 
@@ -61,8 +80,8 @@ export default function DashboardPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold font-headline">Your Pages</h1>
-        <Button onClick={handleCreatePage}>
-          <PlusCircle className="mr-2" />
+        <Button onClick={handleCreatePage} disabled={isCreating}>
+          {isCreating ? <Loader2 className="animate-spin" /> : <PlusCircle className="mr-2" />}
           Create New Page
         </Button>
       </div>
@@ -77,12 +96,16 @@ export default function DashboardPage() {
       )}
 
       {!loading && landingPages.length === 0 && (
-        <Card className="text-center py-12">
+        <Card className="text-center py-16 border-dashed">
           <CardContent>
-            <h3 className="text-xl font-semibold mb-2">No pages yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Click "Create New Page" to get started.
+            <h3 className="text-2xl font-semibold mb-2">No pages yet</h3>
+            <p className="text-muted-foreground mb-6">
+              Click the button below to build your first landing page.
             </p>
+            <Button onClick={handleCreatePage} disabled={isCreating}>
+              <PlusCircle className="mr-2" />
+              Create Your First Page
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -107,14 +130,9 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <CardDescription className="flex items-center justify-between pt-1">
-                    <Link href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate">
-                      /p/{page.slug}
+                    <Link href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate flex items-center gap-1.5">
+                      /p/{page.slug} <ExternalLink className="h-3 w-3" />
                     </Link>
-                    <Badge
-                      variant={page.status === 'published' ? 'default' : 'secondary'}
-                    >
-                      {page.status}
-                    </Badge>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
@@ -127,21 +145,28 @@ export default function DashboardPage() {
                       )}
                   </p>
                 </CardContent>
-                <CardFooter>
-                  <div className="flex w-full justify-between gap-2">
-                      <Button asChild variant="outline" className="flex-1">
+                <CardFooter className="flex justify-between items-center gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                          id={`publish-${page.id}`}
+                          checked={page.status === 'published'}
+                          onCheckedChange={(checked) => handlePublishToggle(page, checked)}
+                          disabled={publishingStates[page.id]}
+                      />
+                      <Label htmlFor={`publish-${page.id}`}>{publishingStates[page.id] ? 'Updating...' : 'Publish'}</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button asChild variant="outline" size="icon">
                           <Link href={`/p/preview/${page.id}`} target="_blank" rel="noopener noreferrer">
-                              <Eye className="mr-2" />
-                              Preview
+                              <Eye />
                           </Link>
                       </Button>
-                      <Button asChild className="flex-1">
+                      <Button asChild size="icon">
                           <Link href={`/dashboard/editor/${page.id}`}>
-                              <Edit className="mr-2" />
-                              Edit
+                              <Edit />
                           </Link>
                       </Button>
-                  </div>
+                    </div>
                 </CardFooter>
               </Card>
             )
