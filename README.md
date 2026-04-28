@@ -1,5 +1,23 @@
-# Firebase Studio
+# PortHub Pages
 
-This is a NextJS starter in Firebase Studio.
+**Build high-converting landing pages in minutes.**
 
-To get started, take a look at src/app/page.tsx.
+This is a Next.js starter in Firebase Studio, transformed into a simple, powerful landing page builder. PortHub Pages helps you create, customize, and publish landing pages for products, services, events, and campaigns—without coding.
+
+## Getting Started
+
+To get started with development, run the local server:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:9002`.
+
+## Key Features
+
+- **Form-Based Editor**: A simple and intuitive editor to manage your page content.
+- **Live Preview**: See your changes in real-time as you edit.
+- **AI Content Suggestions**: Generate headlines and copy with the help of AI.
+- **Template System**: Start with pre-designed templates for various use cases.
+- **Instant Publishing**: Go live with your page on a unique public URL.
