@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection } from '@/firebase';
 import { createLandingPage } from '@/lib/firestore-actions';
-import type { LandingPage } from '@/lib/types';
+import type { LandingPage, Lead } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   Card,
@@ -13,7 +13,7 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
-import { PlusCircle, Loader2, Edit, Eye } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Eye, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +23,11 @@ export default function DashboardPage() {
   const { user } = useUser();
   const {
     data: landingPages,
-    loading,
+    loading: pagesLoading,
     error,
   } = useCollection<LandingPage>('landingPages', { where: ['ownerId', '==', user?.uid] });
+
+  const { data: leads, loading: leadsLoading } = useCollection<Lead>('leads', { where: ['ownerId', '==', user?.uid] });
 
   const { toast } = useToast();
   const router = useRouter();
@@ -52,6 +54,8 @@ export default function DashboardPage() {
       router.push(`/dashboard/editor/${result.id}`);
     }
   };
+  
+  const loading = pagesLoading || leadsLoading;
 
   return (
     <div>
@@ -85,49 +89,63 @@ export default function DashboardPage() {
 
       {!loading && landingPages.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {landingPages.map((page) => (
-            <Card key={page.id} className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="truncate">{page.pageName}</CardTitle>
-                <CardDescription className="flex items-center justify-between">
-                  <Link href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate">
-                    /p/{page.slug}
-                  </Link>
-                  <Badge
-                    variant={page.status === 'published' ? 'default' : 'secondary'}
-                  >
-                    {page.status}
-                  </Badge>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground">
-                  Updated{' '}
-                  {page.updatedAt &&
-                    formatDistanceToNow(
-                      new Date((page.updatedAt as any).seconds * 1000),
-                      { addSuffix: true }
+          {landingPages.map((page) => {
+            const unreadLeadsCount = leads.filter(lead => lead.pageId === page.id && !lead.isRead).length;
+
+            return (
+              <Card key={page.id} className="flex flex-col">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="truncate pr-4">{page.pageName}</CardTitle>
+                    {unreadLeadsCount > 0 && (
+                      <Link href={`/dashboard/editor/${page.id}`} className="flex-shrink-0">
+                          <Badge variant="default" className="flex items-center gap-1.5 cursor-pointer">
+                              <Mail className="h-3 w-3" />
+                              {unreadLeadsCount} New
+                          </Badge>
+                      </Link>
                     )}
-                </p>
-              </CardContent>
-              <CardFooter>
-                 <div className="flex w-full justify-between gap-2">
-                    <Button asChild variant="outline" className="flex-1">
-                        <Link href={`/p/preview/${page.id}`} target="_blank" rel="noopener noreferrer">
-                            <Eye className="mr-2" />
-                            Preview
-                        </Link>
-                    </Button>
-                    <Button asChild className="flex-1">
-                        <Link href={`/dashboard/editor/${page.id}`}>
-                            <Edit className="mr-2" />
-                            Edit
-                        </Link>
-                    </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
+                  </div>
+                  <CardDescription className="flex items-center justify-between pt-1">
+                    <Link href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate">
+                      /p/{page.slug}
+                    </Link>
+                    <Badge
+                      variant={page.status === 'published' ? 'default' : 'secondary'}
+                    >
+                      {page.status}
+                    </Badge>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">
+                    Updated{' '}
+                    {page.updatedAt &&
+                      formatDistanceToNow(
+                        new Date((page.updatedAt as any).seconds * 1000),
+                        { addSuffix: true }
+                      )}
+                  </p>
+                </CardContent>
+                <CardFooter>
+                  <div className="flex w-full justify-between gap-2">
+                      <Button asChild variant="outline" className="flex-1">
+                          <Link href={`/p/preview/${page.id}`} target="_blank" rel="noopener noreferrer">
+                              <Eye className="mr-2" />
+                              Preview
+                          </Link>
+                      </Button>
+                      <Button asChild className="flex-1">
+                          <Link href={`/dashboard/editor/${page.id}`}>
+                              <Edit className="mr-2" />
+                              Edit
+                          </Link>
+                      </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>
