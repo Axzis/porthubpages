@@ -39,7 +39,7 @@ export default function PreviewPage() {
 
       {heroSection && (
         <div className="border rounded-lg p-6">
-          <h2 className="text-2xl font-bold">{heroSection.headline}</h2>
+          <h2 className="text-2xl font-bold">{heroSection.headline || 'Headline'}</h2>
           {heroSection.subheadline && <p className="mt-2 text-gray-700">{heroSection.subheadline}</p>}
         </div>
       )}

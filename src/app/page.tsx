@@ -4,13 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, CheckCircle, Bot } from 'lucide-react';
 import { Logo } from '@/components/logo';
-import { placeholderImages } from '@/lib/placeholder-data';
+import { placeholderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
   const heroImage = placeholderImages.find(p => p.id === 'hero-builder-app-screenshot');
-  const featureImage1 = placeholderImages.find(p => p.id === 'feature-intuitive-editor');
-  const featureImage2 = placeholderImages.find(p => p.id === 'feature-responsive-preview');
-  const featureImage3 = placeholderImages.find(p => p.id === 'feature-lead-capture');
   const avatar1 = placeholderImages.find(p => p.id === 'avatar-1');
   const avatar2 = placeholderImages.find(p => p.id === 'avatar-2');
   const avatar3 = placeholderImages.find(p => p.id === 'avatar-3');
@@ -47,7 +44,7 @@ export default function Home() {
             Create Landing Pages That Convert
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-            PortHub helps you create, customize, and publish landing pages for products, services, events, and campaigns—without coding.
+            PortHub Pages helps you create, customize, and publish landing pages for products, services, events, and campaigns—without coding.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>

@@ -11,12 +11,13 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
+  CardFooter,
 } from '@/components/ui/card';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { ImageUploader } from '@/components/image-uploader';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -26,17 +27,15 @@ export default function DashboardPage() {
     error,
   } = useCollection<LandingPage>('landingPages', user?.uid);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleCreatePage = async () => {
     if (!user) return;
 
-    const mockPageData = {
+    const result = await createLandingPage(user.uid, {
       pageName: 'My New Page',
-      slug: `new-page-${Date.now()}`,
       template: 'blank',
-    };
-
-    const result = await createLandingPage(user.uid, mockPageData);
+    });
 
     if (result.error) {
       toast({
@@ -47,8 +46,9 @@ export default function DashboardPage() {
     } else {
       toast({
         title: 'Page created!',
-        description: 'Your new landing page has been created as a draft.',
+        description: 'Your new page has been created as a draft.',
       });
+      router.push(`/dashboard/editor/${result.id}`);
     }
   };
 
@@ -85,48 +85,40 @@ export default function DashboardPage() {
       {!loading && landingPages.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {landingPages.map((page) => (
-            <Link href={`/dashboard/editor/${page.id}`} key={page.id}>
-              <Card className="h-full hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle className="truncate">{page.pageName}</CardTitle>
-                  <CardDescription className="flex items-center justify-between">
-                    <span>/{page.slug}</span>
-                    <Badge
-                      variant={page.status === 'published' ? 'default' : 'secondary'}
-                    >
-                      {page.status}
-                    </Badge>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Updated{' '}
-                    {page.updatedAt &&
-                      formatDistanceToNow(
-                        new Date((page.updatedAt as any).seconds * 1000),
-                        { addSuffix: true }
-                      )}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+            <Card key={page.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="truncate">{page.pageName}</CardTitle>
+                <CardDescription className="flex items-center justify-between">
+                  <span>/{page.slug}</span>
+                  <Badge
+                    variant={page.status === 'published' ? 'default' : 'secondary'}
+                  >
+                    {page.status}
+                  </Badge>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Updated{' '}
+                  {page.updatedAt &&
+                    formatDistanceToNow(
+                      new Date((page.updatedAt as any).seconds * 1000),
+                      { addSuffix: true }
+                    )}
+                </p>
+              </CardContent>
+              <CardFooter>
+                 <Button asChild className="w-full">
+                    <Link href={`/dashboard/editor/${page.id}`}>
+                      <Edit className="mr-2" />
+                      Edit Page
+                    </Link>
+                 </Button>
+              </CardFooter>
+            </Card>
           ))}
         </div>
       )}
-
-      <div className="mt-12">
-        <Card>
-          <CardHeader>
-            <CardTitle>Image Uploader</CardTitle>
-            <CardDescription>
-              Test the Cloudinary image upload functionality.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ImageUploader />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

@@ -1,23 +1,7 @@
 import type { LandingPage, Template } from '@/lib/types';
+import { placeholderImages } from '@/lib/placeholder-images';
 
-export const placeholderImages = [
-  { "id": "hero-builder-app-screenshot", "description": "Screenshot of the PortHub Pages builder interface", "imageUrl": "https://picsum.photos/seed/builder-app/1200/750", "imageHint": "app screenshot" },
-  { "id": "feature-intuitive-editor", "description": "Close-up of the intuitive form-based editor", "imageUrl": "https://picsum.photos/seed/editor-ui/600/400", "imageHint": "editor interface" },
-  { "id": "feature-responsive-preview", "description": "Preview of a landing page on multiple devices", "imageUrl": "https://picsum.photos/seed/responsive-view/600/400", "imageHint": "responsive design" },
-  { "id": "feature-lead-capture", "description": "Example of a lead capture form on a landing page", "imageUrl": "https://picsum.photos/seed/lead-form/600/400", "imageHint": "contact form" },
-  { "id": "avatar-1", "description": "Avatar of Sarah L.", "imageUrl": "https://picsum.photos/seed/avatar1/40/40", "imageHint": "woman portrait" },
-  { "id": "avatar-2", "description": "Avatar of Michael T.", "imageUrl": "https://picsum.photos/seed/avatar2/40/40", "imageHint": "man portrait" },
-  { "id": "avatar-3", "description": "Avatar of Jessica P.", "imageUrl": "https://picsum.photos/seed/avatar3/40/40", "imageHint": "woman face" },
-  { "id": "hero-saas-product", "description": "Abstract hero image for a SaaS product", "imageUrl": "https://picsum.photos/seed/saas-hero/1200/600", "imageHint": "abstract tech" },
-  { "id": "feature-item-1", "description": "Icon-like image for a feature", "imageUrl": "https://picsum.photos/seed/feature-1/200/200", "imageHint": "abstract icon" },
-  { "id": "feature-item-2", "description": "Icon-like image for another feature", "imageUrl": "https://picsum.photos/seed/feature-2/200/200", "imageHint": "abstract symbol" },
-  { "id": "feature-item-3", "description": "Icon-like image for a third feature", "imageUrl": "https://picsum.photos/seed/feature-3/200/200", "imageHint": "tech logo" },
-  { "id": "gallery-image-1", "description": "Product gallery image 1", "imageUrl": "https://picsum.photos/seed/gallery1/400/300", "imageHint": "product photo" },
-  { "id": "gallery-image-2", "description": "Product gallery image 2", "imageUrl": "https://picsum.photos/seed/gallery2/400/300", "imageHint": "product detail" },
-  { "id": "gallery-image-3", "description": "Product gallery image 3", "imageUrl": "https://picsum.photos/seed/gallery3/400/300", "imageHint": "product in use" },
-];
-
-export const mockLandingPages: Omit<LandingPage, 'sections' | 'seo' | 'style' | 'brand'>[] = [
+export const mockLandingPages: Omit<LandingPage, 'sections' | 'seo' | 'style' | 'brand' | 'createdAt' | 'updatedAt' | 'publishedAt'>[] = [
   {
     id: 'page-1',
     ownerId: 'user-123',
@@ -25,9 +9,6 @@ export const mockLandingPages: Omit<LandingPage, 'sections' | 'seo' | 'style' | 
     slug: 'innovate-saas-launch',
     status: 'published',
     template: 'product-launch',
-    createdAt: new Date('2023-10-26T10:00:00Z'),
-    updatedAt: new Date('2023-10-28T14:30:00Z'),
-    publishedAt: new Date('2023-10-26T12:00:00Z'),
   },
   {
     id: 'page-2',
@@ -36,9 +17,6 @@ export const mockLandingPages: Omit<LandingPage, 'sections' | 'seo' | 'style' | 
     slug: 'creative-design-services',
     status: 'published',
     template: 'service-business',
-    createdAt: new Date('2023-09-15T09:00:00Z'),
-    updatedAt: new Date('2023-10-25T11:20:00Z'),
-    publishedAt: new Date('2023-09-15T10:00:00Z'),
   },
   {
     id: 'page-3',
@@ -47,8 +25,6 @@ export const mockLandingPages: Omit<LandingPage, 'sections' | 'seo' | 'style' | 
     slug: 'tech-conf-2024',
     status: 'draft',
     template: 'event-registration',
-    createdAt: new Date('2023-10-20T16:00:00Z'),
-    updatedAt: new Date('2023-10-29T09:05:00Z'),
   },
   {
     id: 'page-4',
@@ -57,8 +33,6 @@ export const mockLandingPages: Omit<LandingPage, 'sections' | 'seo' | 'style' | 
     slug: 'the-grand-bistro',
     status: 'draft',
     template: 'restaurant-cafe',
-    createdAt: new Date('2023-10-29T11:00:00Z'),
-    updatedAt: new Date('2023-10-29T11:00:00Z'),
   },
 ];
 

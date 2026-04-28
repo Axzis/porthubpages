@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useDoc } from '@/firebase';
 import { updateLandingPage } from '@/lib/firestore-actions';
 import type { LandingPage } from '@/lib/types';
@@ -11,7 +11,7 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { Loader2, Save, ExternalLink } from 'lucide-react';
+import { Loader2, Save, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import Link from 'next/link';
 
 export default function EditorPage() {
   const params = useParams();
+  const router = useRouter();
   const pageId = params.id as string;
   const { toast } = useToast();
 
@@ -64,15 +65,9 @@ export default function EditorPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold font-headline">
-            Loading Editor...
-          </h1>
-        </div>
-        <div className="flex justify-center items-center h-96">
-          <Loader2 className="animate-spin h-8 w-8 text-primary" />
-        </div>
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        <p className="ml-4">Loading Editor...</p>
       </div>
     );
   }
@@ -86,11 +81,14 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start h-full">
       {/* Editor Panel */}
-      <div className="lg:col-span-1 flex flex-col gap-8 sticky top-24">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="lg:col-span-1 flex flex-col gap-6 sticky top-24">
+        <div className="flex items-center justify-between gap-4">
+          <Button variant="outline" size="icon" onClick={() => router.push('/dashboard')}>
+            <ArrowLeft />
+          </Button>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold font-headline truncate" title={page.pageName}>
               {page.pageName}
             </h1>
@@ -102,7 +100,7 @@ export default function EditorPage() {
             ) : (
               <Save />
             )}
-            <span className="ml-2">Save</span>
+            <span className="ml-2 hidden md:inline">Save</span>
           </Button>
         </div>
 

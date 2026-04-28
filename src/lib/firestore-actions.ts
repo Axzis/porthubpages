@@ -27,10 +27,10 @@ export async function createLandingPage(
   const landingPagesRef = collection(firestore, 'landingPages');
 
   try {
-    const newPageData: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt'> = {
+    const newPageData: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt' | 'publishedAt'> = {
       ownerId: userId,
-      pageName: pageData.pageName || 'My New Page',
-      slug: pageData.slug || `new-page-${Date.now()}`,
+      pageName: pageData.pageName || 'Untitled Page',
+      slug: pageData.slug || `untitled-page-${Date.now()}`,
       status: 'draft',
       template: pageData.template || 'blank',
       brand: { name: 'My Brand' },
@@ -47,6 +47,7 @@ export async function createLandingPage(
     revalidatePath('/dashboard');
     return { success: true, id: docRef.id };
   } catch (error: any) {
+    console.error("Error creating landing page:", error);
     return { error: error.message };
   }
 }

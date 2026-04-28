@@ -22,9 +22,9 @@ export type LandingPage = {
     layout: "centered" | "split" | "minimal";
   };
   sections: LandingSection[];
-  createdAt: Date;
-  updatedAt: Date;
-  publishedAt?: Date;
+  createdAt: any; // Firestore timestamp
+  updatedAt: any; // Firestore timestamp
+  publishedAt?: any; // Firestore timestamp
 };
 
 export type LandingSection =
@@ -147,7 +147,7 @@ export type Lead = {
     email?: string;
     phone?: string;
     message?: string;
-    createdAt: Date;
+    createdAt: any; // Firestore timestamp
 };
 
 
