@@ -61,7 +61,10 @@ export default function EditorPage() {
 
   useEffect(() => {
     if (initialPage) {
-      setPage(initialPage);
+      setPage({
+        ...initialPage,
+        sections: initialPage.sections || [],
+      });
     }
   }, [initialPage]);
 
