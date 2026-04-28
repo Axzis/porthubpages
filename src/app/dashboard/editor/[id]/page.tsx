@@ -57,8 +57,6 @@ export default function EditorPage() {
   const [previewKey, setPreviewKey] = useState(Date.now());
   const [uploadingStates, setUploadingStates] = useState<Record<string, boolean>>({});
 
-  const isSetupComplete = page?.pageName !== 'My New Page';
-
   useEffect(() => {
     if (initialPage) {
       setPage({
@@ -67,6 +65,8 @@ export default function EditorPage() {
       });
     }
   }, [initialPage]);
+  
+  const isSetupComplete = page?.pageName !== 'My New Page';
 
   const handleFieldChange = (field: keyof LandingPage, value: any) => {
     setPage(prev => prev ? { ...prev, [field]: value } : null);
@@ -114,7 +114,11 @@ export default function EditorPage() {
                 case 'faq': newItem = { question: 'New Question?', answer: 'An insightful answer.' }; break;
                 case 'pricing': newItem = { name: 'New Plan', price: '$0', features: [], ctaLabel: 'Choose Plan', ctaUrl: '#' }; break;
             }
-            section.items.push(newItem);
+            if (section.items) {
+              section.items.push(newItem);
+            } else {
+              section.items = [newItem];
+            }
         }
         return newPage;
     });
@@ -284,7 +288,7 @@ export default function EditorPage() {
       <Label>Image</Label>
       {value ? (
         <div className="relative w-full h-32 border rounded-md overflow-hidden group">
-          <Image src={value} alt="Uploaded image" layout="fill" objectFit="cover" />
+          <Image src={value} alt="Uploaded image" fill objectFit="cover" />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Button variant="destructive" size="sm" onClick={onRemove}>Remove</Button>
           </div>
@@ -343,7 +347,6 @@ export default function EditorPage() {
 
             {Object.keys(SECTION_DEFAULTS).map(sectionKey => {
               const sectionType = sectionKey as LandingSection['type'];
-              const section = getSection(sectionType);
               const isEnabled = isSectionEnabled(sectionType);
               
               const renderSectionEditor = () => {
@@ -405,7 +408,7 @@ export default function EditorPage() {
                         <div className="grid grid-cols-3 gap-2">
                            {(gallerySection.images || []).map((image, index) => (
                               <div key={index} className="relative group aspect-square">
-                                 <Image src={image.url} alt={image.alt} layout="fill" objectFit="cover" className="rounded-md" />
+                                 <Image src={image.url} alt={image.alt} fill objectFit="cover" className="rounded-md" />
                                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => {
                                         const newImages = gallerySection.images.filter((_, i) => i !== index);
@@ -468,7 +471,7 @@ export default function EditorPage() {
                            <div className="space-y-4">
                               <div className="space-y-2"><Label>Plan Name</Label><Input value={plan.name} onChange={e => handleSectionItemChange('pricing', index, 'name', e.target.value)}/></div>
                               <div className="space-y-2"><Label>Price</Label><Input value={plan.price} onChange={e => handleSectionItemChange('pricing', index, 'price', e.target.value)}/></div>
-                              <div className="space-y-2"><Label>Features (one per line)</Label><Textarea value={plan.features.join('\n')} onChange={e => handleSectionItemChange('pricing', index, 'features', e.target.value.split('\n'))}/></div>
+                              <div className="space-y-2"><Label>Features (one per line)</Label><Textarea value={(plan.features || []).join('\n')} onChange={e => handleSectionItemChange('pricing', index, 'features', e.target.value.split('\n'))}/></div>
                               <div className="space-y-2"><Label>CTA Label</Label><Input value={plan.ctaLabel} onChange={e => handleSectionItemChange('pricing', index, 'ctaLabel', e.target.value)}/></div>
                            </div>
                          </Card>
@@ -505,16 +508,18 @@ export default function EditorPage() {
               return (
                 <AccordionItem key={sectionType} value={sectionType} className="border-none">
                   <Card className="overflow-hidden">
-                    <AccordionTrigger className="p-4 flex justify-between items-center w-full hover:no-underline">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center p-4">
                         <Switch
                           checked={isEnabled}
                           onCheckedChange={(checked) => handleToggleSection(sectionType, checked)}
-                          onClick={(e) => e.stopPropagation()}
+                          id={`switch-${sectionType}`}
                         />
-                        <h3 className="font-semibold text-lg capitalize">{sectionType}</h3>
-                      </div>
-                    </AccordionTrigger>
+                        <AccordionTrigger className="w-full text-left ml-4 p-0 hover:no-underline">
+                           <label htmlFor={`switch-${sectionType}`} className="font-semibold text-lg capitalize cursor-pointer">
+                             {sectionType}
+                           </label>
+                        </AccordionTrigger>
+                    </div>
                     {isEnabled && (
                       <AccordionContent className="p-4 border-t">
                         {renderSectionEditor()}
