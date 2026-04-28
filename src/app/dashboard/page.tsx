@@ -13,7 +13,7 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
-import { PlusCircle, Loader2, Edit } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -89,7 +89,7 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="truncate">{page.pageName}</CardTitle>
                 <CardDescription className="flex items-center justify-between">
-                  <span>/{page.slug}</span>
+                  <span>/p/{page.slug}</span>
                   <Badge
                     variant={page.status === 'published' ? 'default' : 'secondary'}
                   >
@@ -108,12 +108,20 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                 <Button asChild className="w-full">
-                    <Link href={`/dashboard/editor/${page.id}`}>
-                      <Edit className="mr-2" />
-                      Edit Page
-                    </Link>
-                 </Button>
+                 <div className="flex w-full justify-between gap-2">
+                    <Button asChild variant="outline" className="flex-1">
+                        <Link href={`/p/preview/${page.id}`} target="_blank" rel="noopener noreferrer">
+                            <Eye className="mr-2" />
+                            Preview
+                        </Link>
+                    </Button>
+                    <Button asChild className="flex-1">
+                        <Link href={`/dashboard/editor/${page.id}`}>
+                            <Edit className="mr-2" />
+                            Edit
+                        </Link>
+                    </Button>
+                </div>
               </CardFooter>
             </Card>
           ))}

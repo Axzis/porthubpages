@@ -186,7 +186,8 @@ export default function EditorPage() {
   }
   
   const getSection = <T extends LandingSection>(type: T['type']): T | undefined => {
-    return page?.sections?.find(s => s.type === type) as T | undefined;
+    if (!page?.sections) return undefined;
+    return page.sections.find(s => s.type === type) as T | undefined;
   }
 
   const handleSave = async (showToast: boolean = true) => {
@@ -216,6 +217,30 @@ export default function EditorPage() {
       }
       setPreviewKey(Date.now());
       return true;
+    }
+  };
+
+  const handlePublishToggle = async (published: boolean) => {
+    if (!page) return;
+    const newStatus = published ? 'published' : 'draft';
+
+    // Optimistic UI update
+    setPage(p => p ? { ...p, status: newStatus } : null);
+
+    const result = await updateLandingPage(pageId, { status: newStatus, slug: page.slug });
+
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: result.error,
+      });
+      // Revert on error
+      setPage(p => p ? { ...p, status: page.status } : null);
+    } else {
+      toast({
+        title: `Page ${newStatus === 'published' ? 'published' : 'is now a draft'}.`,
+      });
     }
   };
 
@@ -324,10 +349,22 @@ export default function EditorPage() {
             </h1>
             <p className="text-sm text-muted-foreground truncate">/p/{page.slug}</p>
           </div>
-          <Button onClick={() => handleSave()} disabled={isSaving}>
-            {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-            <span className="ml-2 hidden md:inline">Save</span>
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="publish-status"
+                checked={page.status === 'published'}
+                onCheckedChange={handlePublishToggle}
+              />
+              <Label htmlFor="publish-status" className="font-medium">
+                {page.status === 'published' ? 'Published' : 'Draft'}
+              </Label>
+            </div>
+            <Button onClick={() => handleSave()} disabled={isSaving}>
+              {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
+              <span className="ml-2 hidden md:inline">Save</span>
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-y-auto flex-grow pr-4 -mr-4">
@@ -558,7 +595,7 @@ export default function EditorPage() {
                 <Button variant="outline" size="sm" asChild>
                 <Link href={`/p/${page.slug}`} target="_blank">
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    Open
+                    Open Live Page
                 </Link>
                 </Button>
             </CardHeader>
