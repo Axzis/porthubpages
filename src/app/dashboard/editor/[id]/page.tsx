@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDoc } from '@/firebase';
 import { updateLandingPage } from '@/lib/firestore-actions';
 import { uploadImage } from '@/app/actions/cloudinary';
-import type { LandingPage, LandingSection, HeroSection, FeatureSection, GallerySection, TestimonialSection, PricingSection, FAQSection, ContactSection } from '@/lib/types';
+import type { LandingPage, LandingSection, HeroSection, FeatureSection, GallerySection, TestimonialSection, PricingSection, FAQSection, ContactSection, CTASection, AboutSection } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -19,7 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Loader2, Save, ExternalLink, ArrowLeft, PlusCircle, Trash2, Image as ImageIcon, Check } from 'lucide-react';
+import { Loader2, Save, ExternalLink, ArrowLeft, PlusCircle, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -110,7 +110,7 @@ export default function EditorPage() {
             let newItem;
             switch(sectionType) {
                 case 'features': newItem = { title: 'New Feature', description: 'A great new thing.' }; break;
-                case 'testimonials': newItem = { text: 'Amazing!', author: 'New Customer' }; break;
+                case 'testimonials': newItem = { id: Date.now().toString(), text: 'Amazing!', author: 'New Customer' }; break;
                 case 'faq': newItem = { question: 'New Question?', answer: 'An insightful answer.' }; break;
                 case 'pricing': newItem = { name: 'New Plan', price: '$0', features: [], ctaLabel: 'Choose Plan', ctaUrl: '#' }; break;
             }
@@ -186,7 +186,7 @@ export default function EditorPage() {
   }
   
   const getSection = <T extends LandingSection>(type: T['type']): T | undefined => {
-    return page?.sections.find(s => s.type === type) as T | undefined;
+    return page?.sections?.find(s => s.type === type) as T | undefined;
   }
 
   const handleSave = async (showToast: boolean = true) => {
@@ -238,6 +238,8 @@ export default function EditorPage() {
   const pricingSection = getSection<PricingSection>('pricing');
   const faqSection = getSection<FAQSection>('faq');
   const contactSection = getSection<ContactSection>('contact');
+  const ctaSection = getSection<CTASection>('cta');
+  const aboutSection = getSection<AboutSection>('about');
   
   if (!isSetupComplete) {
      return (
@@ -439,7 +441,7 @@ export default function EditorPage() {
                           <Input value={testimonialsSection.title} onChange={e => handleSectionChange('testimonials', 'title', e.target.value)} />
                         </div>
                        {(testimonialsSection.items || []).map((item, index) => (
-                         <Card key={index} className="p-4 relative">
+                         <Card key={item.id || index} className="p-4 relative">
                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeSectionItem('testimonials', index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                            <div className="space-y-4">
                               <div className="space-y-2">
@@ -499,6 +501,20 @@ export default function EditorPage() {
                        <div className="space-y-2"><Label>Section Title</Label><Input value={contactSection.title} onChange={e => handleSectionChange('contact', 'title', e.target.value)}/></div>
                        <div className="space-y-2"><Label>Description</Label><Textarea value={contactSection.description} onChange={e => handleSectionChange('contact', 'description', e.target.value)}/></div>
                        <div className="space-y-2"><Label>Submit Button Label</Label><Input value={contactSection.form.submitButtonLabel} onChange={e => handleSectionChange('contact', 'form', {...contactSection.form, submitButtonLabel: e.target.value})}/></div>
+                    </div>
+                  );
+                   case 'cta': return ctaSection && (
+                    <div className="space-y-4">
+                      <div className="space-y-2"><Label>Title</Label><Input value={ctaSection.title} onChange={e => handleSectionChange('cta', 'title', e.target.value)}/></div>
+                      <div className="space-y-2"><Label>Description</Label><Textarea value={ctaSection.description} onChange={e => handleSectionChange('cta', 'description', e.target.value)}/></div>
+                      <div className="space-y-2"><Label>CTA Label</Label><Input value={ctaSection.cta.label} onChange={e => handleSectionChange('cta', 'cta', {...ctaSection.cta, label: e.target.value})}/></div>
+                      <div className="space-y-2"><Label>CTA URL</Label><Input value={ctaSection.cta.url} onChange={e => handleSectionChange('cta', 'cta', {...ctaSection.cta, url: e.target.value})}/></div>
+                    </div>
+                  );
+                  case 'about': return aboutSection && (
+                    <div className="space-y-4">
+                      <div className="space-y-2"><Label>Title</Label><Input value={aboutSection.title} onChange={e => handleSectionChange('about', 'title', e.target.value)}/></div>
+                      <div className="space-y-2"><Label>Content</Label><Textarea value={aboutSection.content} onChange={e => handleSectionChange('about', 'content', e.target.value)} rows={6}/></div>
                     </div>
                   );
                   default: return null;
