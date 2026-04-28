@@ -29,6 +29,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type SectionWithDefault = Omit<LandingSection, 'id' | 'enabled' | 'order'>;
 
@@ -112,7 +113,7 @@ export default function EditorPage() {
                 case 'features': newItem = { title: 'New Feature', description: 'A great new thing.' }; break;
                 case 'testimonials': newItem = { id: Date.now().toString(), text: 'Amazing!', author: 'New Customer' }; break;
                 case 'faq': newItem = { question: 'New Question?', answer: 'An insightful answer.' }; break;
-                case 'pricing': newItem = { name: 'New Plan', price: '$0', features: [], ctaLabel: 'Choose Plan', ctaUrl: '#' }; break;
+                case 'pricing': newItem = { name: 'New Plan', price: '$0', features: [], ctaLabel: 'Choose Plan', ctaUrl: '#', highlighted: false }; break;
             }
             if (section.items) {
               section.items.push(newItem);
@@ -198,6 +199,7 @@ export default function EditorPage() {
       pageName: page.pageName,
       slug: page.slug,
       sections: page.sections,
+      style: page.style,
     });
     setIsSaving(false);
 
@@ -381,6 +383,23 @@ export default function EditorPage() {
                     <Label htmlFor="slug-main">Slug</Label>
                     <Input id="slug-main" value={page.slug} onChange={(e) => handleFieldChange('slug', e.target.value)} />
                   </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="theme">Theme</Label>
+                    <Select
+                      value={page.style?.theme || 'default'}
+                      onValueChange={(value) => handleFieldChange('style', { ...page.style, theme: value === 'default' ? undefined : value })}
+                    >
+                      <SelectTrigger id="theme">
+                        <SelectValue placeholder="Select a theme" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="dark">Dark</SelectItem>
+                        <SelectItem value="corporate">Corporate</SelectItem>
+                        <SelectItem value="sunrise">Sunrise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -512,6 +531,10 @@ export default function EditorPage() {
                               <div className="space-y-2"><Label>Price</Label><Input value={plan.price} onChange={e => handleSectionItemChange('pricing', index, 'price', e.target.value)}/></div>
                               <div className="space-y-2"><Label>Features (one per line)</Label><Textarea value={(plan.features || []).join('\n')} onChange={e => handleSectionItemChange('pricing', index, 'features', e.target.value.split('\n'))}/></div>
                               <div className="space-y-2"><Label>CTA Label</Label><Input value={plan.ctaLabel} onChange={e => handleSectionItemChange('pricing', index, 'ctaLabel', e.target.value)}/></div>
+                              <div className="flex items-center space-x-2 pt-2">
+                                <Switch id={`pricing-${index}-highlighted`} checked={!!plan.highlighted} onCheckedChange={checked => handleSectionItemChange('pricing', index, 'highlighted', checked)} />
+                                <Label htmlFor={`pricing-${index}-highlighted`}>Highlight this plan</Label>
+                              </div>
                            </div>
                          </Card>
                        ))}

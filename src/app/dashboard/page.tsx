@@ -89,7 +89,9 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="truncate">{page.pageName}</CardTitle>
                 <CardDescription className="flex items-center justify-between">
-                  <span>/p/{page.slug}</span>
+                  <Link href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate">
+                    /p/{page.slug}
+                  </Link>
                   <Badge
                     variant={page.status === 'published' ? 'default' : 'secondary'}
                   >

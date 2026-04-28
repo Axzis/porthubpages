@@ -36,8 +36,12 @@ export default function PreviewPage() {
     return <div className="p-4">Page not found.</div>;
   }
   
+  const themeClass = page.style?.theme && page.style.theme !== 'default'
+    ? page.style.theme === 'dark' ? 'dark' : `theme-${page.style.theme}`
+    : '';
+
   return (
-    <div className="flex flex-col min-h-screen font-body bg-background text-foreground">
+    <div className={`${themeClass} flex flex-col min-h-screen font-body bg-background text-foreground`}>
         <main className="flex-grow">
           {(page.sections || []).filter(s => s.enabled).map(section => {
             switch (section.type) {
