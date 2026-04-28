@@ -35,7 +35,8 @@ export type LandingSection =
   | FAQSection
   | CTASection
   | ContactSection
-  | GallerySection;
+  | GallerySection
+  | AboutSection;
 
 export type BaseSection = {
   id: string;
@@ -68,6 +69,7 @@ export type FeatureSection = BaseSection & {
     title: string;
     description: string;
     icon?: string; // Corresponds to lucide-react icon name
+    imageUrl?: string;
   }[];
 };
 
@@ -136,6 +138,12 @@ export type ContactSection = BaseSection & {
         message: boolean;
         submitButtonLabel: string;
     }
+};
+
+export type AboutSection = BaseSection & {
+  type: 'about';
+  title: string;
+  content: string;
 };
 
 

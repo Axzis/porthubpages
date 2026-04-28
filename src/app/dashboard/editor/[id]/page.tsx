@@ -3,7 +3,8 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc } from '@/firebase';
 import { updateLandingPage } from '@/lib/firestore-actions';
-import type { LandingPage, HeroSection } from '@/lib/types';
+import { uploadImage } from '@/app/actions/cloudinary';
+import type { LandingPage, LandingSection, HeroSection, FeatureSection, GallerySection, TestimonialSection, PricingSection, FAQSection, ContactSection } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -18,14 +19,30 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Loader2, Save, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, ExternalLink, ArrowLeft, PlusCircle, Trash2, Image as ImageIcon, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
+import Image from 'next/image';
+
+type SectionWithDefault = Omit<LandingSection, 'id' | 'enabled' | 'order'>;
+
+const SECTION_DEFAULTS: { [K in LandingSection['type']]: SectionWithDefault } = {
+  hero: { type: 'hero', headline: 'Your Big Headline', subheadline: 'A compelling subheadline.', primaryCta: { label: 'Get Started', url: '#' } },
+  features: { type: 'features', title: 'Features', description: 'Discover what makes our product unique.', items: [] },
+  gallery: { type: 'gallery', title: 'Our Gallery', images: [] },
+  testimonials: { type: 'testimonials', title: 'What Our Customers Say', items: [] },
+  pricing: { type: 'pricing', title: 'Pricing Plans', plans: [] },
+  faq: { type: 'faq', title: 'Frequently Asked Questions', items: [] },
+  contact: { type: 'contact', title: 'Get in Touch', description: 'We\'d love to hear from you.', form: { name: true, email: true, phone: false, message: true, submitButtonLabel: 'Submit' } },
+  cta: { type: 'cta', title: 'Ready to Dive In?', description: 'Start your free trial today.', cta: { label: 'Sign Up Now', url: '#' } },
+  about: { type: 'about', title: 'About Us', content: 'We are a company dedicated to excellence.'}
+};
 
 export default function EditorPage() {
   const params = useParams();
@@ -33,62 +50,146 @@ export default function EditorPage() {
   const pageId = params.id as string;
   const { toast } = useToast();
 
-  const { data: page, loading, error } = useDoc<LandingPage>('landingPages', pageId);
+  const { data: initialPage, loading, error } = useDoc<LandingPage>('landingPages', pageId);
 
-  const [pageName, setPageName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [headline, setHeadline] = useState('');
-  const [subheadline, setSubheadline] = useState('');
+  const [page, setPage] = useState<LandingPage | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
-  
+  const [uploadingStates, setUploadingStates] = useState<Record<string, boolean>>({});
+
   const isSetupComplete = page?.pageName !== 'My New Page';
 
   useEffect(() => {
-    if (page) {
-      setPageName(page.pageName);
-      setSlug(page.slug);
-
-      const heroSection = page.sections?.find(s => s.type === 'hero') as HeroSection | undefined;
-      if (heroSection) {
-        setHeadline(heroSection.headline || '');
-        setSubheadline(heroSection.subheadline || '');
-      }
+    if (initialPage) {
+      setPage(initialPage);
     }
-  }, [page]);
+  }, [initialPage]);
+
+  const handleFieldChange = (field: keyof LandingPage, value: any) => {
+    setPage(prev => prev ? { ...prev, [field]: value } : null);
+  };
   
+  const handleSlugChange = (value: string) => {
+    const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    setPage(prev => prev ? { ...prev, slug } : null);
+  }
+
+  const handleSectionChange = (sectionType: LandingSection['type'], field: string, value: any) => {
+    setPage(prevPage => {
+        if (!prevPage) return null;
+        const newPage = structuredClone(prevPage);
+        let section = newPage.sections.find(s => s.type === sectionType);
+        if (section) {
+            (section as any)[field] = value;
+        }
+        return newPage;
+    });
+  };
+
+  const handleSectionItemChange = (sectionType: LandingSection['type'], itemIndex: number, field: string, value: any) => {
+     setPage(prevPage => {
+        if (!prevPage) return null;
+        const newPage = structuredClone(prevPage);
+        const section = newPage.sections.find(s => s.type === sectionType) as any;
+        if (section && section.items && section.items[itemIndex]) {
+            section.items[itemIndex][field] = value;
+        }
+        return newPage;
+    });
+  }
+
+  const addSectionItem = (sectionType: 'features' | 'testimonials' | 'faq' | 'pricing') => {
+      setPage(prevPage => {
+        if (!prevPage) return null;
+        const newPage = structuredClone(prevPage);
+        const section = newPage.sections.find(s => s.type === sectionType) as any;
+        if (section) {
+            let newItem;
+            switch(sectionType) {
+                case 'features': newItem = { title: 'New Feature', description: 'A great new thing.' }; break;
+                case 'testimonials': newItem = { text: 'Amazing!', author: 'New Customer' }; break;
+                case 'faq': newItem = { question: 'New Question?', answer: 'An insightful answer.' }; break;
+                case 'pricing': newItem = { name: 'New Plan', price: '$0', features: [], ctaLabel: 'Choose Plan', ctaUrl: '#' }; break;
+            }
+            section.items.push(newItem);
+        }
+        return newPage;
+    });
+  }
+
+  const removeSectionItem = (sectionType: 'features' | 'testimonials' | 'faq' | 'pricing', itemIndex: number) => {
+     setPage(prevPage => {
+        if (!prevPage) return null;
+        const newPage = structuredClone(prevPage);
+        const section = newPage.sections.find(s => s.type === sectionType) as any;
+        if (section && section.items) {
+            section.items.splice(itemIndex, 1);
+        }
+        return newPage;
+    });
+  }
+  
+  const handleImageUpload = async (file: File, uploadKey: string, onUploadComplete: (url: string) => void) => {
+    setUploadingStates(prev => ({ ...prev, [uploadKey]: true }));
+    const formData = new FormData();
+    formData.append('image', file);
+    const result = await uploadImage(formData);
+    setUploadingStates(prev => ({ ...prev, [uploadKey]: false }));
+
+    if (result.url) {
+      onUploadComplete(result.url);
+      toast({ title: 'Image uploaded!' });
+    } else {
+      toast({ variant: 'destructive', title: 'Upload failed', description: result.error });
+    }
+  };
+  
+  const handleToggleSection = (sectionType: LandingSection['type'], enabled: boolean) => {
+    setPage(prevPage => {
+      if (!prevPage) return null;
+      const newPage = structuredClone(prevPage);
+      const sectionIndex = newPage.sections.findIndex(s => s.type === sectionType);
+
+      if (enabled) {
+        if (sectionIndex === -1) {
+          // Add section if it doesn't exist
+          const newSection: LandingSection = {
+            id: sectionType,
+            order: newPage.sections.length + 1,
+            enabled: true,
+            ...SECTION_DEFAULTS[sectionType]
+          } as LandingSection;
+          newPage.sections.push(newSection);
+        } else {
+          // Enable section if it exists
+          newPage.sections[sectionIndex].enabled = true;
+        }
+      } else {
+        // Disable section
+        if (sectionIndex > -1) {
+          newPage.sections[sectionIndex].enabled = false;
+        }
+      }
+      return newPage;
+    });
+  };
+
+  const isSectionEnabled = (sectionType: LandingSection['type']): boolean => {
+    return page?.sections.some(s => s.type === sectionType && s.enabled) || false;
+  }
+  
+  const getSection = <T extends LandingSection>(type: T['type']): T | undefined => {
+    return page?.sections.find(s => s.type === type) as T | undefined;
+  }
+
   const handleSave = async (showToast: boolean = true) => {
     if (!page) return false;
     setIsSaving(true);
-
-    const currentSections = page.sections || [];
-    const heroSectionIndex = currentSections.findIndex(s => s.type === 'hero');
-    let newSections = [...currentSections];
-
-    if (heroSectionIndex > -1) {
-      const existingHero = newSections[heroSectionIndex] as HeroSection;
-      newSections[heroSectionIndex] = {
-          ...existingHero,
-          headline,
-          subheadline
-      };
-    } else {
-        newSections.push({
-            id: 'hero',
-            type: 'hero',
-            enabled: true,
-            order: 1,
-            headline,
-            subheadline,
-            primaryCta: { label: 'Get Started', url: '#' },
-        } as HeroSection);
-    }
-
-
+  
     const result = await updateLandingPage(pageId, {
-      pageName,
-      slug,
-      sections: newSections,
+      pageName: page.pageName,
+      slug: page.slug,
+      sections: page.sections,
     });
     setIsSaving(false);
 
@@ -106,22 +207,10 @@ export default function EditorPage() {
           description: 'Your changes have been saved.',
         });
       }
-      // Force iframe to reload
       setPreviewKey(Date.now());
       return true;
     }
   };
-
-  const handleInitialSave = async () => {
-    const success = await handleSave(false);
-    if (success) {
-      toast({
-        title: 'Page created!',
-        description: 'Now you can start building your page.',
-      });
-    }
-  };
-
 
   if (loading) {
     return (
@@ -132,145 +221,311 @@ export default function EditorPage() {
     );
   }
 
-  if (error) {
-    return <p className="text-destructive">Error: {error.message}</p>;
-  }
-
-  if (!page) {
-    return <p>Page not found.</p>;
-  }
+  if (error) return <p className="text-destructive">Error: {error.message}</p>;
+  if (!page) return <p>Page not found.</p>;
+  
+  const heroSection = getSection<HeroSection>('hero');
+  const featuresSection = getSection<FeatureSection>('features');
+  const gallerySection = getSection<GallerySection>('gallery');
+  const testimonialsSection = getSection<TestimonialSection>('testimonials');
+  const pricingSection = getSection<PricingSection>('pricing');
+  const faqSection = getSection<FAQSection>('faq');
+  const contactSection = getSection<ContactSection>('contact');
   
   if (!isSetupComplete) {
      return (
-        <div className="flex items-center justify-center h-screen -mt-16">
-          <Card className="w-full max-w-md">
-              <CardHeader>
-                  <CardTitle>Let's get started</CardTitle>
-                  <CardDescription>Give your new landing page a name and a URL.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                      <Label htmlFor="pageName">Page Name</Label>
-                      <Input
-                          id="pageName"
-                          value={pageName === 'My New Page' ? '' : pageName}
-                          onChange={(e) => {
-                            setPageName(e.target.value);
-                            setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
-                          }}
-                          placeholder="e.g. My Awesome Product"
-                      />
-                  </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="slug">Slug</Label>
-                      <Input
-                          id="slug"
-                          value={slug.startsWith('untitled-page-') ? '' : slug}
-                          onChange={(e) => setSlug(e.target.value)}
-                          placeholder="e.g. my-awesome-product"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Your page will be at: /p/{slug}
-                      </p>
-                  </div>
-              </CardContent>
-              <CardFooter>
-                  <Button onClick={handleInitialSave} disabled={isSaving || !pageName || !slug} className="w-full">
-                      {isSaving ? <Loader2 className="animate-spin" /> : "Save and Continue"}
-                  </Button>
-              </CardFooter>
-          </Card>
+      <div className="flex items-center justify-center h-screen -mt-16">
+        <Card className="w-full max-w-md">
+            <CardHeader>
+                <CardTitle>Let's get started</CardTitle>
+                <CardDescription>Give your new landing page a name and a URL.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="pageName">Page Name</Label>
+                    <Input
+                        id="pageName"
+                        value={page.pageName === 'My New Page' ? '' : page.pageName}
+                        onChange={(e) => {
+                          handleFieldChange('pageName', e.target.value);
+                          handleSlugChange(e.target.value);
+                        }}
+                        placeholder="e.g. My Awesome Product"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="slug">Slug</Label>
+                    <Input
+                        id="slug"
+                        value={page.slug.startsWith('untitled-page-') ? '' : page.slug}
+                        onChange={(e) => handleFieldChange('slug', e.target.value)}
+                        placeholder="e.g. my-awesome-product"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Your page will be at: /p/{page.slug}
+                    </p>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={() => handleSave(false)} disabled={isSaving || !page.pageName || !page.slug} className="w-full">
+                    {isSaving ? <Loader2 className="animate-spin" /> : "Save and Continue"}
+                </Button>
+            </CardFooter>
+        </Card>
       </div>
      )
   }
 
+  const renderImageUploader = (uploadKey: string, value: string | undefined, onUpload: (url: string) => void, onRemove: () => void) => (
+    <div className="space-y-2">
+      <Label>Image</Label>
+      {value ? (
+        <div className="relative w-full h-32 border rounded-md overflow-hidden group">
+          <Image src={value} alt="Uploaded image" layout="fill" objectFit="cover" />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="destructive" size="sm" onClick={onRemove}>Remove</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full h-32 border-2 border-dashed rounded-md flex items-center justify-center">
+            {uploadingStates[uploadKey] ? <Loader2 className="animate-spin"/> : (
+              <div className="text-center">
+                 <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
+                 <Label htmlFor={uploadKey} className="text-primary hover:underline cursor-pointer">
+                    Upload an image
+                    <Input id={uploadKey} type="file" className="sr-only" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], uploadKey, onUpload)} />
+                 </Label>
+              </div>
+            )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(380px,1fr)_2fr] gap-8 items-start h-[calc(100vh-8rem)]">
-      {/* Editor Panel */}
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(420px,1.2fr)_2fr] gap-8 items-start h-[calc(100vh-8rem)]">
       <div className="lg:col-span-1 flex flex-col gap-6 h-full">
         <div className="flex items-center justify-between gap-4 flex-shrink-0">
           <Button variant="outline" size="icon" onClick={() => router.push('/dashboard')}>
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft />
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold font-headline truncate" title={page.pageName}>
-              {pageName}
+              {page.pageName}
             </h1>
             <p className="text-sm text-muted-foreground truncate">/p/{page.slug}</p>
           </div>
           <Button onClick={() => handleSave()} disabled={isSaving}>
-            {isSaving ? (
-              <Loader2 className="animate-spin h-4 w-4" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
+            {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
             <span className="ml-2 hidden md:inline">Save</span>
           </Button>
         </div>
 
         <div className="overflow-y-auto flex-grow pr-4 -mr-4">
-            <Accordion type="single" collapsible defaultValue="page-settings" className="w-full">
-            <AccordionItem value="page-settings">
-                <AccordionTrigger>
-                <div className="flex flex-col items-start text-left">
-                    <h3 className="font-semibold">Page Settings</h3>
-                    <p className="text-sm font-normal text-muted-foreground">Manage your page name and URL.</p>
-                </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4 space-y-4">
-                    <div className="space-y-2">
+          <Accordion type="multiple" className="w-full space-y-4">
+            
+            <AccordionItem value="page-settings" className="border rounded-lg bg-card">
+              <AccordionTrigger className="p-4"><h3 className="font-semibold text-lg">Page Settings</h3></AccordionTrigger>
+              <AccordionContent className="p-4 space-y-4">
+                  <div className="space-y-2">
                     <Label htmlFor="pageName-main">Page Name</Label>
-                    <Input
-                        id="pageName-main"
-                        value={pageName}
-                        onChange={(e) => setPageName(e.target.value)}
-                        placeholder="My Awesome Page"
-                    />
-                    </div>
-                    <div className="space-y-2">
+                    <Input id="pageName-main" value={page.pageName} onChange={(e) => handleFieldChange('pageName', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="slug-main">Slug</Label>
-                    <Input
-                        id="slug-main"
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value)}
-                        placeholder="my-awesome-page"
-                    />
+                    <Input id="slug-main" value={page.slug} onChange={(e) => handleFieldChange('slug', e.target.value)} />
+                  </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {Object.keys(SECTION_DEFAULTS).map(sectionKey => {
+              const sectionType = sectionKey as LandingSection['type'];
+              const section = getSection(sectionType);
+              const isEnabled = isSectionEnabled(sectionType);
+              
+              const renderSectionEditor = () => {
+                switch(sectionType) {
+                  case 'hero': return heroSection && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="headline">Headline</Label>
+                        <Input id="headline" value={heroSection.headline} onChange={e => handleSectionChange('hero', 'headline', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="subheadline">Subheadline</Label>
+                        <Textarea id="subheadline" value={heroSection.subheadline || ''} onChange={e => handleSectionChange('hero', 'subheadline', e.target.value)} />
+                      </div>
+                      {renderImageUploader(
+                        'hero-image',
+                        heroSection.imageUrl,
+                        (url) => handleSectionChange('hero', 'imageUrl', url),
+                        () => handleSectionChange('hero', 'imageUrl', undefined)
+                      )}
                     </div>
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="hero-section">
-                <AccordionTrigger>
-                <div className="flex flex-col items-start text-left">
-                    <h3 className="font-semibold">Hero Section</h3>
-                    <p className="text-sm font-normal text-muted-foreground">The first thing your visitors will see.</p>
-                </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="headline">Headline</Label>
-                    <Input
-                    id="headline"
-                    value={headline}
-                    onChange={(e) => setHeadline(e.target.value)}
-                    placeholder="Your Compelling Headline"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="subheadline">Subheadline</Label>
-                    <Textarea
-                    id="subheadline"
-                    value={subheadline}
-                    onChange={(e) => setSubheadline(e.target.value)}
-                    placeholder="A short description that explains more."
-                    />
-                </div>
-                </AccordionContent>
-            </AccordionItem>
-            </Accordion>
+                  );
+                  case 'features': return featuresSection && (
+                    <div className="space-y-6">
+                       <div className="space-y-2">
+                          <Label>Section Title</Label>
+                          <Input value={featuresSection.title} onChange={e => handleSectionChange('features', 'title', e.target.value)} />
+                        </div>
+                       {(featuresSection.items || []).map((item, index) => (
+                         <Card key={index} className="p-4 relative">
+                           <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeSectionItem('features', index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                           <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Feature Title</Label>
+                                <Input value={item.title} onChange={e => handleSectionItemChange('features', index, 'title', e.target.value)} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Description</Label>
+                                <Textarea value={item.description} onChange={e => handleSectionItemChange('features', index, 'description', e.target.value)} />
+                              </div>
+                               {renderImageUploader(
+                                `feature-${index}-image`,
+                                item.imageUrl,
+                                (url) => handleSectionItemChange('features', index, 'imageUrl', url),
+                                () => handleSectionItemChange('features', index, 'imageUrl', undefined)
+                              )}
+                           </div>
+                         </Card>
+                       ))}
+                       <Button variant="outline" onClick={() => addSectionItem('features')}><PlusCircle className="mr-2"/>Add Feature</Button>
+                    </div>
+                  );
+                  case 'gallery': return gallerySection && (
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Section Title</Label>
+                          <Input value={gallerySection.title} onChange={e => handleSectionChange('gallery', 'title', e.target.value)} />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                           {(gallerySection.images || []).map((image, index) => (
+                              <div key={index} className="relative group aspect-square">
+                                 <Image src={image.url} alt={image.alt} layout="fill" objectFit="cover" className="rounded-md" />
+                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => {
+                                        const newImages = gallerySection.images.filter((_, i) => i !== index);
+                                        handleSectionChange('gallery', 'images', newImages);
+                                    }}><Trash2/></Button>
+                                 </div>
+                              </div>
+                           ))}
+                           <div className="border-2 border-dashed rounded-md flex items-center justify-center aspect-square">
+                             {uploadingStates['gallery-new-image'] ? <Loader2 className="animate-spin"/> : (
+                               <Label htmlFor="gallery-upload" className="cursor-pointer text-center p-2">
+                                 <ImageIcon className="mx-auto h-6 w-6 text-muted-foreground"/>
+                                 <span className="text-xs">Add Image</span>
+                                 <Input id="gallery-upload" type="file" className="sr-only" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'gallery-new-image', (url) => {
+                                     const newImages = [...(gallerySection.images || []), { id: Date.now().toString(), url, alt: 'Gallery Image' }];
+                                     handleSectionChange('gallery', 'images', newImages);
+                                 })}/>
+                               </Label>
+                             )}
+                           </div>
+                        </div>
+                     </div>
+                  );
+                  case 'testimonials': return testimonialsSection && (
+                    <div className="space-y-6">
+                       <div className="space-y-2">
+                          <Label>Section Title</Label>
+                          <Input value={testimonialsSection.title} onChange={e => handleSectionChange('testimonials', 'title', e.target.value)} />
+                        </div>
+                       {(testimonialsSection.items || []).map((item, index) => (
+                         <Card key={index} className="p-4 relative">
+                           <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeSectionItem('testimonials', index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                           <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Author</Label>
+                                <Input value={item.author} onChange={e => handleSectionItemChange('testimonials', index, 'author', e.target.value)} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Testimonial Text</Label>
+                                <Textarea value={item.text} onChange={e => handleSectionItemChange('testimonials', index, 'text', e.target.value)} />
+                              </div>
+                              {renderImageUploader(
+                                `testimonial-${index}-avatar`,
+                                item.avatarUrl,
+                                (url) => handleSectionItemChange('testimonials', index, 'avatarUrl', url),
+                                () => handleSectionItemChange('testimonials', index, 'avatarUrl', undefined)
+                              )}
+                           </div>
+                         </Card>
+                       ))}
+                       <Button variant="outline" onClick={() => addSectionItem('testimonials')}><PlusCircle className="mr-2"/>Add Testimonial</Button>
+                    </div>
+                  );
+                  case 'pricing': return pricingSection && (
+                    <div className="space-y-6">
+                      <div className="space-y-2"><Label>Section Title</Label><Input value={pricingSection.title} onChange={e => handleSectionChange('pricing', 'title', e.target.value)}/></div>
+                      {(pricingSection.plans || []).map((plan, index) => (
+                         <Card key={index} className="p-4 relative">
+                           <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeSectionItem('pricing', index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                           <div className="space-y-4">
+                              <div className="space-y-2"><Label>Plan Name</Label><Input value={plan.name} onChange={e => handleSectionItemChange('pricing', index, 'name', e.target.value)}/></div>
+                              <div className="space-y-2"><Label>Price</Label><Input value={plan.price} onChange={e => handleSectionItemChange('pricing', index, 'price', e.target.value)}/></div>
+                              <div className="space-y-2"><Label>Features (one per line)</Label><Textarea value={plan.features.join('\n')} onChange={e => handleSectionItemChange('pricing', index, 'features', e.target.value.split('\n'))}/></div>
+                              <div className="space-y-2"><Label>CTA Label</Label><Input value={plan.ctaLabel} onChange={e => handleSectionItemChange('pricing', index, 'ctaLabel', e.target.value)}/></div>
+                           </div>
+                         </Card>
+                       ))}
+                       <Button variant="outline" onClick={() => addSectionItem('pricing')}><PlusCircle className="mr-2"/>Add Plan</Button>
+                    </div>
+                  );
+                  case 'faq': return faqSection && (
+                     <div className="space-y-6">
+                      <div className="space-y-2"><Label>Section Title</Label><Input value={faqSection.title} onChange={e => handleSectionChange('faq', 'title', e.target.value)}/></div>
+                       {(faqSection.items || []).map((item, index) => (
+                         <Card key={index} className="p-4 relative">
+                           <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeSectionItem('faq', index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                           <div className="space-y-4">
+                              <div className="space-y-2"><Label>Question</Label><Input value={item.question} onChange={e => handleSectionItemChange('faq', index, 'question', e.target.value)}/></div>
+                              <div className="space-y-2"><Label>Answer</Label><Textarea value={item.answer} onChange={e => handleSectionItemChange('faq', index, 'answer', e.target.value)}/></div>
+                           </div>
+                         </Card>
+                       ))}
+                       <Button variant="outline" onClick={() => addSectionItem('faq')}><PlusCircle className="mr-2"/>Add FAQ Item</Button>
+                    </div>
+                  );
+                  case 'contact': return contactSection && (
+                    <div className="space-y-4">
+                       <div className="space-y-2"><Label>Section Title</Label><Input value={contactSection.title} onChange={e => handleSectionChange('contact', 'title', e.target.value)}/></div>
+                       <div className="space-y-2"><Label>Description</Label><Textarea value={contactSection.description} onChange={e => handleSectionChange('contact', 'description', e.target.value)}/></div>
+                       <div className="space-y-2"><Label>Submit Button Label</Label><Input value={contactSection.form.submitButtonLabel} onChange={e => handleSectionChange('contact', 'form', {...contactSection.form, submitButtonLabel: e.target.value})}/></div>
+                    </div>
+                  );
+                  default: return null;
+                }
+              };
+
+              return (
+                <AccordionItem key={sectionType} value={sectionType} className="border-none">
+                  <Card className="overflow-hidden">
+                    <AccordionTrigger className="p-4 flex justify-between items-center w-full hover:no-underline">
+                      <div className="flex items-center gap-4">
+                        <Switch
+                          checked={isEnabled}
+                          onCheckedChange={(checked) => handleToggleSection(sectionType, checked)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <h3 className="font-semibold text-lg capitalize">{sectionType}</h3>
+                      </div>
+                    </AccordionTrigger>
+                    {isEnabled && (
+                      <AccordionContent className="p-4 border-t">
+                        {renderSectionEditor()}
+                      </AccordionContent>
+                    )}
+                  </Card>
+                </AccordionItem>
+              );
+            })}
+
+          </Accordion>
         </div>
       </div>
 
-      {/* Preview Panel */}
       <div className="lg:col-span-1 hidden lg:block h-full">
         <div className="sticky top-20 h-[calc(100vh-7rem)]">
             <Card className="h-full flex flex-col">
