@@ -32,13 +32,12 @@ export default function EditorPage() {
   const [slug, setSlug] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
-  const [isSetupComplete, setIsSetupComplete] = useState(false);
+  
+  // Derived state: setup is complete if the page name is not the default one.
+  const isSetupComplete = page?.pageName !== 'My New Page';
 
   useEffect(() => {
     if (page) {
-      if (page.pageName !== 'My New Page') {
-        setIsSetupComplete(true);
-      }
       setPageName(page.pageName);
       setSlug(page.slug);
     }
@@ -75,7 +74,8 @@ export default function EditorPage() {
   const handleInitialSave = async () => {
     const success = await handleSave(false);
     if (success) {
-      setIsSetupComplete(true);
+      // No need to set state here, the view will update automatically
+      // when the `page` prop changes and `isSetupComplete` becomes true.
       toast({
         title: 'Page created!',
         description: 'Now you can start building your page.',
