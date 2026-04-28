@@ -85,7 +85,7 @@ export default function DashboardPage() {
       {!loading && landingPages.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {landingPages.map((page) => (
-            <Link href={`/editor/${page.id}`} key={page.id}>
+            <Link href={`/dashboard/editor/${page.id}`} key={page.id}>
               <Card className="h-full hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <CardTitle className="truncate">{page.pageName}</CardTitle>
