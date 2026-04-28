@@ -10,6 +10,7 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
+  CardFooter,
 } from '@/components/ui/card';
 import { Loader2, Save, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -31,15 +32,19 @@ export default function EditorPage() {
   const [slug, setSlug] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
+  const [isSetupComplete, setIsSetupComplete] = useState(false);
 
   useEffect(() => {
     if (page) {
+      if (page.pageName !== 'My New Page') {
+        setIsSetupComplete(true);
+      }
       setPageName(page.pageName);
       setSlug(page.slug);
     }
   }, [page]);
-
-  const handleSave = async () => {
+  
+  const handleSave = async (showToast: boolean = true) => {
     setIsSaving(true);
     const result = await updateLandingPage(pageId, {
       pageName,
@@ -53,15 +58,31 @@ export default function EditorPage() {
         title: 'Error saving page',
         description: result.error,
       });
+      return false;
     } else {
-      toast({
-        title: 'Page saved!',
-        description: 'Your changes have been saved.',
-      });
+      if (showToast) {
+        toast({
+          title: 'Page saved!',
+          description: 'Your changes have been saved.',
+        });
+      }
       // Force iframe to reload
       setPreviewKey(Date.now());
+      return true;
     }
   };
+
+  const handleInitialSave = async () => {
+    const success = await handleSave(false);
+    if (success) {
+      setIsSetupComplete(true);
+      toast({
+        title: 'Page created!',
+        description: 'Now you can start building your page.',
+      });
+    }
+  };
+
 
   if (loading) {
     return (
@@ -79,6 +100,50 @@ export default function EditorPage() {
   if (!page) {
     return <p>Page not found.</p>;
   }
+  
+  if (!isSetupComplete) {
+     return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <Card className="w-full max-w-md">
+              <CardHeader>
+                  <CardTitle>Let's get started</CardTitle>
+                  <CardDescription>Give your new landing page a name and a URL.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="pageName">Page Name</Label>
+                      <Input
+                          id="pageName"
+                          value={pageName === 'My New Page' ? '' : pageName}
+                          onChange={(e) => {
+                            setPageName(e.target.value);
+                            setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+                          }}
+                          placeholder="e.g. My Awesome Product"
+                      />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="slug">Slug</Label>
+                      <Input
+                          id="slug"
+                          value={slug.startsWith('untitled-page-') ? '' : slug}
+                          onChange={(e) => setSlug(e.target.value)}
+                          placeholder="e.g. my-awesome-product"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Your page will be at: /p/{slug}
+                      </p>
+                  </div>
+              </CardContent>
+              <CardFooter>
+                  <Button onClick={handleInitialSave} disabled={isSaving || !pageName || !slug} className="w-full">
+                      {isSaving ? <Loader2 className="animate-spin" /> : "Save and Continue"}
+                  </Button>
+              </CardFooter>
+          </Card>
+      </div>
+     )
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start h-full">
@@ -90,11 +155,11 @@ export default function EditorPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold font-headline truncate" title={page.pageName}>
-              {page.pageName}
+              {pageName}
             </h1>
-            <p className="text-sm text-muted-foreground">/{page.slug}</p>
+            <p className="text-sm text-muted-foreground">/p/{page.slug}</p>
           </div>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={() => handleSave()} disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="animate-spin" />
             ) : (
