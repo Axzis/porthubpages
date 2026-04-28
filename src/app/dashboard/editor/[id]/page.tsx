@@ -595,9 +595,30 @@ export default function EditorPage() {
                   );
                   case 'contact': return contactSection && (
                     <div className="space-y-4">
-                       <div className="space-y-2"><Label>Section Title</Label><Input value={contactSection.title} onChange={e => handleSectionChange('contact', 'title', e.target.value)}/></div>
-                       <div className="space-y-2"><Label>Description</Label><Textarea value={contactSection.description} onChange={e => handleSectionChange('contact', 'description', e.target.value)}/></div>
-                       <div className="space-y-2"><Label>Submit Button Label</Label><Input value={contactSection.form.submitButtonLabel} onChange={e => handleSectionChange('contact', 'form', {...contactSection.form, submitButtonLabel: e.target.value})}/></div>
+                        <div className="space-y-2"><Label>Section Title</Label><Input value={contactSection.title} onChange={e => handleSectionChange('contact', 'title', e.target.value)}/></div>
+                        <div className="space-y-2"><Label>Description</Label><Textarea value={contactSection.description} onChange={e => handleSectionChange('contact', 'description', e.target.value)}/></div>
+                        <div className="space-y-2"><Label>Submit Button Label</Label><Input value={contactSection.form.submitButtonLabel} onChange={e => handleSectionChange('contact', 'form', {...contactSection.form, submitButtonLabel: e.target.value})}/></div>
+                        <div className="space-y-4 pt-4 border-t">
+                          <Label className="font-semibold">Form Fields</Label>
+                          <div className="space-y-3 pl-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="contact-name-enabled">Name Field</Label>
+                              <Switch id="contact-name-enabled" checked={contactSection.form.name} onCheckedChange={checked => handleSectionChange('contact', 'form', {...contactSection.form, name: checked})}/>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="contact-email-enabled" className="text-muted-foreground">Email Field</Label>
+                              <Switch id="contact-email-enabled" checked={contactSection.form.email} disabled />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="contact-phone-enabled">Phone Field</Label>
+                              <Switch id="contact-phone-enabled" checked={contactSection.form.phone} onCheckedChange={checked => handleSectionChange('contact', 'form', {...contactSection.form, phone: checked})}/>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="contact-message-enabled">Message Field</Label>
+                              <Switch id="contact-message-enabled" checked={contactSection.form.message} onCheckedChange={checked => handleSectionChange('contact', 'form', {...contactSection.form, message: checked})}/>
+                            </div>
+                          </div>
+                        </div>
                     </div>
                   );
                    case 'cta': return ctaSection && (

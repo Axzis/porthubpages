@@ -28,29 +28,38 @@ export function ContactForm({ pageId, ownerId, contactSection, isPreview = false
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isPreview) return;
+    if (isPreview) {
+        toast({ title: 'Preview Mode', description: 'Form submission is disabled in preview mode.'});
+        return;
+    };
 
-    if (contactSection.form.email && !email) {
+    // Email is always required by the backend.
+    if (!email) {
       toast({ variant: 'destructive', title: 'Email is required.' });
       return;
     }
+    
+    // Check for other required fields based on the page's configuration
     if (contactSection.form.name && !name) {
       toast({ variant: 'destructive', title: 'Name is required.' });
       return;
     }
-     if (contactSection.form.message && !message) {
+    if (contactSection.form.message && !message) {
       toast({ variant: 'destructive', title: 'Message is required.' });
       return;
     }
 
     setLoading(true);
 
-    const result = await addLead(pageId, ownerId, {
-      name: contactSection.form.name ? name : undefined,
-      email: contactSection.form.email ? email : '',
-      phone: contactSection.form.phone ? phone : undefined,
-      message: contactSection.form.message ? message : undefined,
-    });
+    const leadPayload: { name?: string; email: string; phone?: string; message?: string } = {
+        email,
+    };
+    if (contactSection.form.name) leadPayload.name = name;
+    if (contactSection.form.phone) leadPayload.phone = phone;
+    if (contactSection.form.message) leadPayload.message = message;
+
+
+    const result = await addLead(pageId, ownerId, leadPayload);
 
     setLoading(false);
 
@@ -104,9 +113,10 @@ export function ContactForm({ pageId, ownerId, contactSection, isPreview = false
             <Textarea id="contact-message" placeholder="Your Message" value={message} onChange={(e) => setMessage(e.target.value)} />
         </div>
       )}
-      <Button type="submit" className="w-full" disabled={loading || isPreview}>
+      <Button type="submit" className="w-full" disabled={loading}>
         {loading ? <Loader2 className="animate-spin" /> : contactSection.form.submitButtonLabel}
       </Button>
+      {isPreview && <p className="text-xs text-center text-muted-foreground mt-2">Form submission is disabled in preview mode.</p>}
     </form>
   );
 }
