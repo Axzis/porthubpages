@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection } from '@/firebase';
-import { createLandingPage, updateLandingPage } from '@/lib/firestore-actions';
+import { createLandingPage, updateLandingPage, deleteLandingPage } from '@/lib/firestore-actions';
 import type { LandingPage, Lead } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -14,7 +14,18 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
-import { PlusCircle, Loader2, Edit, Eye, Mail, ExternalLink } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { PlusCircle, Loader2, Edit, Eye, Mail, ExternalLink, Trash2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +47,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [publishingStates, setPublishingStates] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pageToDelete, setPageToDelete] = useState<LandingPage | null>(null);
 
   const handleCreatePage = async () => {
     if (!user) return;
@@ -74,12 +87,43 @@ export default function DashboardPage() {
     setPublishingStates(prev => ({...prev, [page.id]: false}));
   }
   
+  const handleDeletePage = async () => {
+    if (!pageToDelete) return;
+    const result = await deleteLandingPage(pageToDelete.id);
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error deleting page',
+        description: result.error,
+      });
+    } else {
+      toast({
+        title: 'Page deleted!',
+        description: `${pageToDelete.pageName} and all its leads have been permanently deleted.`,
+      });
+    }
+    setPageToDelete(null);
+  };
+  
   const loading = pagesLoading || leadsLoading;
+
+  const filteredPages = landingPages.filter(page => 
+    page.pageName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold font-headline">Your Pages</h1>
+        <div className="flex-1 max-w-sm relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+                placeholder="Search pages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+            />
+        </div>
         <Button onClick={handleCreatePage} disabled={isCreating}>
           {isCreating ? <Loader2 className="animate-spin" /> : <PlusCircle className="mr-2" />}
           Create New Page
@@ -95,24 +139,26 @@ export default function DashboardPage() {
         <p className="text-destructive">Error loading pages: {error.message}</p>
       )}
 
-      {!loading && landingPages.length === 0 && (
+      {!loading && filteredPages.length === 0 && (
         <Card className="text-center py-16 border-dashed">
           <CardContent>
-            <h3 className="text-2xl font-semibold mb-2">No pages yet</h3>
+            <h3 className="text-2xl font-semibold mb-2">{searchTerm ? 'No pages found' : 'No pages yet'}</h3>
             <p className="text-muted-foreground mb-6">
-              Click the button below to build your first landing page.
+              {searchTerm ? 'Try a different search term.' : 'Click the button below to build your first landing page.'}
             </p>
-            <Button onClick={handleCreatePage} disabled={isCreating}>
-              <PlusCircle className="mr-2" />
-              Create Your First Page
-            </Button>
+             {!searchTerm && (
+                <Button onClick={handleCreatePage} disabled={isCreating}>
+                  <PlusCircle className="mr-2" />
+                  Create Your First Page
+                </Button>
+             )}
           </CardContent>
         </Card>
       )}
 
-      {!loading && landingPages.length > 0 && (
+      {!loading && filteredPages.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {landingPages.map((page) => {
+          {filteredPages.map((page) => {
             const unreadLeadsCount = leads.filter(lead => lead.pageId === page.id && !lead.isRead).length;
 
             return (
@@ -166,6 +212,9 @@ export default function DashboardPage() {
                               <Edit />
                           </Link>
                       </Button>
+                      <Button variant="destructive" size="icon" onClick={() => setPageToDelete(page)}>
+                        <Trash2 />
+                      </Button>
                     </div>
                 </CardFooter>
               </Card>
@@ -173,6 +222,24 @@ export default function DashboardPage() {
           })}
         </div>
       )}
+       <AlertDialog open={!!pageToDelete} onOpenChange={(open) => !open && setPageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              <span className="font-bold"> {pageToDelete?.pageName} </span>
+              landing page and all of its associated leads.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePage}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

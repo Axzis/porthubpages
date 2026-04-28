@@ -157,3 +157,36 @@ export async function markLeadsAsRead(leadIds: string[]) {
         return { error: error.message };
     }
 }
+
+export async function deleteLandingPage(pageId: string) {
+  if (!pageId) {
+    return { error: 'Page ID is required.' };
+  }
+
+  const { firestore } = initializeFirebase();
+  
+  try {
+    const pageRef = doc(firestore, 'landingPages', pageId);
+    
+    // Find and delete all associated leads
+    const leadsQuery = query(collection(firestore, 'leads'), where('pageId', '==', pageId));
+    const leadsSnapshot = await getDocs(leadsQuery);
+    
+    const batch = writeBatch(firestore);
+    
+    leadsSnapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    // Delete the landing page itself
+    batch.delete(pageRef);
+    
+    await batch.commit();
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting landing page:", error);
+    return { error: error.message };
+  }
+}
