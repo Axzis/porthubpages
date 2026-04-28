@@ -42,7 +42,6 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
   
-  // Derived state: setup is complete if the page name is not the default one.
   const isSetupComplete = page?.pageName !== 'My New Page';
 
   useEffect(() => {
@@ -67,7 +66,6 @@ export default function EditorPage() {
     let newSections = [...currentSections];
 
     if (heroSectionIndex > -1) {
-      // Update existing hero section
       const existingHero = newSections[heroSectionIndex] as HeroSection;
       newSections[heroSectionIndex] = {
           ...existingHero,
@@ -75,7 +73,6 @@ export default function EditorPage() {
           subheadline
       };
     } else {
-        // Create new hero section
         newSections.push({
             id: 'hero',
             type: 'hero',
@@ -118,8 +115,6 @@ export default function EditorPage() {
   const handleInitialSave = async () => {
     const success = await handleSave(false);
     if (success) {
-      // No need to set state here, the view will update automatically
-      // when the `page` prop changes and `isSetupComplete` becomes true.
       toast({
         title: 'Page created!',
         description: 'Now you can start building your page.',
@@ -147,7 +142,7 @@ export default function EditorPage() {
   
   if (!isSetupComplete) {
      return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <div className="flex items-center justify-center h-screen -mt-16">
           <Card className="w-full max-w-md">
               <CardHeader>
                   <CardTitle>Let's get started</CardTitle>
@@ -190,24 +185,24 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(380px,1fr)_2fr] gap-8 items-start">
       {/* Editor Panel */}
-      <div className="lg:col-span-1 flex flex-col gap-6 sticky top-24">
+      <div className="lg:col-span-1 flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <Button variant="outline" size="icon" onClick={() => router.push('/dashboard')}>
-            <ArrowLeft />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold font-headline truncate" title={page.pageName}>
               {pageName}
             </h1>
-            <p className="text-sm text-muted-foreground">/p/{page.slug}</p>
+            <p className="text-sm text-muted-foreground truncate">/p/{page.slug}</p>
           </div>
           <Button onClick={() => handleSave()} disabled={isSaving}>
             {isSaving ? (
-              <Loader2 className="animate-spin" />
+              <Loader2 className="animate-spin h-4 w-4" />
             ) : (
-              <Save />
+              <Save className="h-4 w-4" />
             )}
             <span className="ml-2 hidden md:inline">Save</span>
           </Button>
@@ -223,18 +218,18 @@ export default function EditorPage() {
             </AccordionTrigger>
             <AccordionContent className="pt-4 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pageName">Page Name</Label>
+                  <Label htmlFor="pageName-main">Page Name</Label>
                   <Input
-                    id="pageName"
+                    id="pageName-main"
                     value={pageName}
                     onChange={(e) => setPageName(e.target.value)}
                     placeholder="My Awesome Page"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Slug</Label>
+                  <Label htmlFor="slug-main">Slug</Label>
                   <Input
-                    id="slug"
+                    id="slug-main"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
                     placeholder="my-awesome-page"
@@ -274,26 +269,30 @@ export default function EditorPage() {
       </div>
 
       {/* Preview Panel */}
-      <div className="lg:col-span-2">
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Live Preview</CardTitle>
-            <Button variant="outline" asChild>
-              <Link href={`/p/${page.slug}`} target="_blank">
-                <ExternalLink className="mr-2" />
-                Open in new tab
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="h-[calc(100vh-220px)] p-0">
-            <iframe
-              key={previewKey}
-              src={`/p/preview/${pageId}`}
-              className="w-full h-full border-0 rounded-b-lg"
-              title="Page Preview"
-            />
-          </CardContent>
-        </Card>
+      <div className="lg:col-span-1 hidden lg:block">
+        <div className="sticky top-24">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Live Preview</CardTitle>
+                <Button variant="outline" size="sm" asChild>
+                <Link href={`/p/${page.slug}`} target="_blank">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open
+                </Link>
+                </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className="h-[calc(100vh-11rem-4rem)] w-full rounded-b-lg border bg-muted overflow-hidden">
+                    <iframe
+                    key={previewKey}
+                    src={`/p/preview/${pageId}`}
+                    className="w-full h-full"
+                    title="Page Preview"
+                    />
+                </div>
+            </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
