@@ -64,6 +64,7 @@ export default function EditorPage() {
   const [previewKey, setPreviewKey] = useState(Date.now());
   const [uploadingStates, setUploadingStates] = useState<Record<string, boolean>>({});
   const [openAccordions, setOpenAccordions] = useState<string[]>(['page-settings']);
+  const [isInitialSetupFlow, setIsInitialSetupFlow] = useState(false);
 
   useEffect(() => {
     if (initialPage) {
@@ -71,6 +72,11 @@ export default function EditorPage() {
         ...initialPage,
         sections: initialPage.sections || [],
       });
+      if (initialPage.pageName === 'My New Page' && initialPage.slug.startsWith('untitled-page-')) {
+        setIsInitialSetupFlow(true);
+      } else {
+        setIsInitialSetupFlow(false);
+      }
     }
   }, [initialPage]);
 
@@ -90,8 +96,6 @@ export default function EditorPage() {
     }
 }, [openAccordions, leads, toast]);
   
-  const isSetupComplete = page?.pageName && page.pageName !== 'My New Page';
-
   const handleFieldChange = (field: keyof LandingPage, value: any) => {
     setPage(prev => prev ? { ...prev, [field]: value } : null);
   };
@@ -294,7 +298,7 @@ export default function EditorPage() {
   const ctaSection = getSection<CTASection>('cta');
   const aboutSection = getSection<AboutSection>('about');
   
-  if (!isSetupComplete) {
+  if (isInitialSetupFlow) {
      return (
       <div className="flex items-center justify-center h-screen -mt-16">
         <Card className="w-full max-w-md">
@@ -329,7 +333,16 @@ export default function EditorPage() {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={() => handleSave(false)} disabled={isSaving || !page.pageName || !page.slug} className="w-full">
+                <Button 
+                  onClick={async () => {
+                    const success = await handleSave(false);
+                    if (success) {
+                      setIsInitialSetupFlow(false);
+                    }
+                  }} 
+                  disabled={isSaving || !page.pageName || page.pageName === 'My New Page'} 
+                  className="w-full"
+                >
                     {isSaving ? <Loader2 className="animate-spin" /> : "Save and Continue"}
                 </Button>
             </CardFooter>
@@ -725,17 +738,16 @@ export default function EditorPage() {
               return (
                 <AccordionItem key={sectionType} value={sectionType} className="border-none">
                   <Card className="overflow-hidden">
-                    <div className="flex items-center p-4">
-                        <Switch
-                          checked={isEnabled}
-                          onCheckedChange={(checked) => handleToggleSection(sectionType, checked)}
-                          id={`switch-${sectionType}`}
-                        />
-                        <AccordionTrigger className="w-full text-left ml-4 p-0 hover:no-underline">
-                           <label htmlFor={`switch-${sectionType}`} className="font-semibold text-lg capitalize cursor-pointer">
-                             {sectionType.replace('-', ' ')}
-                           </label>
-                        </AccordionTrigger>
+                    <div className={cn('flex items-center p-4')}>
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => handleToggleSection(sectionType, checked)}
+                        id={`switch-${sectionType}`}
+                      />
+                      <label htmlFor={`switch-${sectionType}`} className="font-semibold text-lg capitalize cursor-pointer ml-4 flex-1">
+                        {sectionType.replace('-', ' ')}
+                      </label>
+                      <AccordionTrigger className="p-0 w-auto hover:no-underline" />
                     </div>
                     {isEnabled && (
                       <AccordionContent className="p-4 border-t">
