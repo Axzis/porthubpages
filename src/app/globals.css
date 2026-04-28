@@ -45,22 +45,22 @@ body {
   .dark {
     --background: 215 28% 17%;
     --foreground: 210 40% 98%;
-    --card: 215 28% 17%;
+    --card: 215 28% 20%;
     --card-foreground: 210 40% 98%;
     --popover: 215 28% 17%;
     --popover-foreground: 210 40% 98%;
     --primary: 210 40% 98%;
     --primary-foreground: 215 28% 17%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 215 28% 22%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 215 28% 22%;
     --muted-foreground: 215 21.4% 45.1%;
     --accent: 192 84% 59%;
     --accent-foreground: 215 28% 17%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 215 28% 25%;
+    --input: 215 28% 25%;
     --ring: 192 84% 59%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
