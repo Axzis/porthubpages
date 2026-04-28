@@ -1,6 +1,16 @@
 'use server';
 
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  updateDoc,
+  doc,
+  query,
+  where,
+  getDocs,
+  limit,
+} from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { LandingPage } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
@@ -17,17 +27,71 @@ export async function createLandingPage(
   const landingPagesRef = collection(firestore, 'landingPages');
 
   try {
-    const newPageData = {
-      ...pageData,
+    const newPageData: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt'> = {
       ownerId: userId,
+      pageName: pageData.pageName || 'My New Page',
+      slug: pageData.slug || `new-page-${Date.now()}`,
       status: 'draft',
+      template: pageData.template || 'blank',
+      brand: { name: 'My Brand' },
+      seo: { title: 'My New Page', description: '' },
+      style: { primaryColor: '#000000', font: 'inter', layout: 'centered' },
+      sections: [],
+    };
+
+    const docRef = await addDoc(landingPagesRef, {
+      ...newPageData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    };
-    const docRef = await addDoc(landingPagesRef, newPageData);
+    });
     revalidatePath('/dashboard');
     return { success: true, id: docRef.id };
   } catch (error: any) {
     return { error: error.message };
+  }
+}
+
+export async function updateLandingPage(
+  pageId: string,
+  data: Partial<LandingPage>
+) {
+  if (!pageId) {
+    return { error: 'Page ID is required.' };
+  }
+
+  const { firestore } = initializeFirebase();
+  const pageRef = doc(firestore, 'landingPages', pageId);
+
+  try {
+    await updateDoc(pageRef, {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    revalidatePath('/dashboard');
+    revalidatePath(`/dashboard/editor/${pageId}`);
+    if (data.slug) {
+      revalidatePath(`/p/${data.slug}`);
+    }
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function getPageBySlug(slug: string): Promise<LandingPage | null> {
+  const { firestore } = initializeFirebase();
+  const pagesRef = collection(firestore, 'landingPages');
+  const q = query(pagesRef, where('slug', '==', slug), limit(1));
+
+  try {
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+      return null;
+    }
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as LandingPage;
+  } catch (error) {
+    console.error('Error fetching page by slug:', error);
+    return null;
   }
 }
