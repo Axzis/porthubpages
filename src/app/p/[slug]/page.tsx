@@ -17,6 +17,18 @@ export default async function PublicPage({ params }: { params: { slug: string } 
     notFound();
   }
 
+  const formatUrl = (url: string | undefined): string => {
+    if (!url) return '#';
+    const trimmedUrl = url.trim();
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('/') || trimmedUrl.startsWith('#') || trimmedUrl.startsWith('mailto:') || trimmedUrl.startsWith('tel:')) {
+      return trimmedUrl;
+    }
+    if (trimmedUrl.includes('.') && !trimmedUrl.includes(' ')) {
+      return `https://${trimmedUrl}`;
+    }
+    return trimmedUrl;
+  };
+
   const themeClass = page.style?.theme && page.style.theme !== 'default'
     ? page.style.theme === 'dark' ? 'dark' : `theme-${page.style.theme}`
     : '';
@@ -38,12 +50,12 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                      <div className="mt-8 flex justify-center gap-4">
                         {heroSection.primaryCta?.label && (
                            <Button size="lg" asChild>
-                             <Link href={heroSection.primaryCta.url || '#'}>{heroSection.primaryCta.label}</Link>
+                             <Link href={formatUrl(heroSection.primaryCta.url)}>{heroSection.primaryCta.label}</Link>
                            </Button>
                         )}
                         {heroSection.secondaryCta?.label && (
                             <Button size="lg" variant="outline" asChild>
-                              <Link href={heroSection.secondaryCta.url || '#'}>{heroSection.secondaryCta.label}</Link>
+                              <Link href={formatUrl(heroSection.secondaryCta.url)}>{heroSection.secondaryCta.label}</Link>
                             </Button>
                         )}
                     </div>
@@ -138,7 +150,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                                                       <li key={fIndex} className="flex items-center gap-2">✓ {feature}</li>
                                                   ))}
                                               </ul>
-                                              <Button asChild className="mt-6 w-full"><Link href={plan.ctaUrl}>{plan.ctaLabel}</Link></Button>
+                                              <Button asChild className="mt-6 w-full"><Link href={formatUrl(plan.ctaUrl)}>{plan.ctaLabel}</Link></Button>
                                           </CardContent>
                                       </Card>
                                   ))}
@@ -187,7 +199,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                           <div className="container mx-auto text-center">
                               <h2 className="text-4xl font-bold font-headline">{ctaSection.title}</h2>
                               <p className="mt-4 text-lg max-w-2xl mx-auto opacity-90">{ctaSection.description}</p>
-                              <Button asChild size="lg" variant="secondary" className="mt-8"><Link href={ctaSection.cta.url}>{ctaSection.cta.label}</Link></Button>
+                              <Button asChild size="lg" variant="secondary" className="mt-8"><Link href={formatUrl(ctaSection.cta.url)}>{ctaSection.cta.label}</Link></Button>
                           </div>
                       </section>
                   );
