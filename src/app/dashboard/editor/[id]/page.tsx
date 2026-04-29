@@ -504,6 +504,23 @@ export default function EditorPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="font">Font</Label>
+                    <Select
+                      value={page.style?.font || 'inter'}
+                      onValueChange={(value) => handleFieldChange('style', { ...page.style, font: value as any })}
+                    >
+                      <SelectTrigger id="font">
+                        <SelectValue placeholder="Select a font" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inter" style={{fontFamily: 'var(--font-inter)'}}>Inter (Default Sans-serif)</SelectItem>
+                        <SelectItem value="space-grotesk" style={{fontFamily: 'var(--font-space-grotesk)'}}>Space Grotesk (Modern Sans-serif)</SelectItem>
+                        <SelectItem value="lora" style={{fontFamily: 'var(--font-lora)'}}>Lora (Classic Serif)</SelectItem>
+                        <SelectItem value="roboto-mono" style={{fontFamily: 'var(--font-roboto-mono)'}}>Roboto Mono (Monospace)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
               </AccordionContent>
             </AccordionItem>
             

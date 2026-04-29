@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Space_Grotesk, Lora, Roboto_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -22,6 +22,16 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
   variable: '--font-space-grotesk',
 })
+const lora = Lora({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-lora',
+})
+const robotoMono = Roboto_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-roboto-mono',
+})
 
 export default function RootLayout({
   children,
@@ -30,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("antialiased", inter.variable, spaceGrotesk.variable)}>
+      <body className={cn("antialiased", inter.variable, spaceGrotesk.variable, lora.variable, robotoMono.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

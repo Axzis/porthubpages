@@ -34,11 +34,20 @@ export default async function PublicPage({ params }: { params: { slug: string } 
     ? page.style.theme === 'dark' ? 'dark' : `theme-${page.style.theme}`
     : '';
   
+  const fontClassMap = {
+    inter: 'font-body',
+    'space-grotesk': 'font-headline',
+    lora: 'font-serif',
+    'roboto-mono': 'font-mono'
+  };
+  const fontClass = fontClassMap[page.style?.font || 'inter'];
+
   return (
     <>
       <AOSInitializer />
       <div className={cn(
-        "flex flex-col min-h-screen bg-background text-foreground font-body",
+        "flex flex-col min-h-screen bg-background text-foreground",
+        fontClass,
         themeClass
         )}>
         <main className="flex-grow">

@@ -19,7 +19,7 @@ export type LandingPage = {
   };
   style: {
     primaryColor: string;
-    font: "inter" | "space-grotesk" | "serif" | "modern";
+    font: "inter" | "space-grotesk" | "lora" | "roboto-mono";
     layout: "centered" | "split" | "minimal";
     theme?: "default" | "dark" | "corporate" | "sunrise" | "midnight" | "mint";
   };
