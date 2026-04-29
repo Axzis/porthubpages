@@ -72,7 +72,8 @@ export default function EditorPage() {
         ...initialPage,
         sections: initialPage.sections || [],
       });
-      if (initialPage.pageName === 'My New Page' && page.slug.startsWith('untitled-page-')) {
+      // A more robust check for the initial setup flow.
+      if (initialPage.pageName === 'My New Page' && initialPage.slug.startsWith('untitled-page-')) {
         setIsInitialSetupFlow(true);
       } else {
         setIsInitialSetupFlow(false);
@@ -167,26 +168,31 @@ export default function EditorPage() {
   /**
    * Handles image uploads using the signed upload flow.
    * This is the recommended approach for serverless environments like Vercel.
-   * 1. Get a signature from our server.
-   * 2. Use the signature to upload the file directly to Cloudinary.
+   * 1. Get a signature and other necessary details from our server.
+   * 2. Use these details to upload the file directly to Cloudinary from the client.
    */
   const handleImageUpload = async (file: File, uploadKey: string, onUploadComplete: (url: string) => void) => {
     setUploadingStates(prev => ({ ...prev, [uploadKey]: true }));
 
     try {
-      // 1. Get signature from our server action
-      const { timestamp, signature } = await getSignedUploadSignature();
+      // 1. Get signature, timestamp, api_key, and cloud_name from our server action.
+      // This is a secure way to get credentials to the client without exposing them in client-side code.
+      const { timestamp, signature, apiKey, cloudName } = await getSignedUploadSignature();
 
-      // 2. Prepare form data for direct Cloudinary upload
+      if (!apiKey || !cloudName) {
+        throw new Error("Cloudinary configuration is missing on the server.");
+      }
+
+      // 2. Prepare form data for direct Cloudinary upload.
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY as string);
+      formData.append('api_key', apiKey);
       formData.append('signature', signature);
       formData.append('timestamp', timestamp.toString());
       
-      const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
+      const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
-      // 3. Upload the file directly to Cloudinary
+      // 3. Upload the file directly to Cloudinary.
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
@@ -328,6 +334,7 @@ export default function EditorPage() {
   const ctaSection = getSection<CTASection>('cta');
   const aboutSection = getSection<AboutSection>('about');
   
+  // This initial setup flow now has a more robust check to prevent premature redirection.
   if (isInitialSetupFlow) {
      return (
       <div className="flex items-center justify-center h-screen -mt-16">
@@ -370,7 +377,7 @@ export default function EditorPage() {
                       setIsInitialSetupFlow(false);
                     }
                   }} 
-                  disabled={isSaving || !page.pageName || page.pageName === 'My New Page' || page.pageName.length === 0} 
+                  disabled={isSaving || !page.pageName || page.pageName === 'My New Page' || page.pageName.trim().length === 0} 
                   className="w-full"
                 >
                     {isSaving ? <Loader2 className="animate-spin" /> : "Save and Continue"}

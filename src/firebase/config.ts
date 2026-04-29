@@ -1,15 +1,14 @@
 // IMPORTANT: Do not store secrets in this file.
-// This file is for public Firebase configuration, and the values are
-// loaded from environment variables.
+// This file is for public Firebase configuration.
 
-// See .env.local for a list of required environment variables.
-
+// The Firebase config object is now hardcoded here to prevent
+// environment variable loading issues on client-side.
 export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyCGbyn2GkK_xtqztFJONhmzd1dAzCxC3o8",
+  authDomain: "landinghub-ffcfa.firebaseapp.com",
+  projectId: "landinghub-ffcfa",
+  storageBucket: "landinghub-ffcfa.appspot.com",
+  messagingSenderId: "43985930883",
+  appId: "1:43985930883:web:d029f3ca1b5164edbfe9b6",
+  measurementId: "G-E29WC0D8YQ"
 };
