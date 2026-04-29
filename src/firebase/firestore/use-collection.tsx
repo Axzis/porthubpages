@@ -16,7 +16,7 @@ interface DocumentData {
 }
 
 type UseCollectionOptions = {
-    where?: [string, '==', any];
+    where?: [string, '==' | 'in' | 'array-contains', any];
 }
 
 export function useCollection<T extends DocumentData>(
@@ -28,17 +28,31 @@ export function useCollection<T extends DocumentData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Destructuring for stable dependencies in useEffect
+  const whereField = options?.where?.[0];
+  const whereOp = options?.where?.[1];
+  const whereValue = options?.where?.[2];
+
   useEffect(() => {
     if (!firestore) {
       setLoading(false);
       return;
     }
 
+    // If a 'where' clause is provided but the value to compare against is missing
+    // (e.g., waiting for user auth), return empty data for now.
+    // The hook will re-run when the value is available.
+    if (whereField && (whereValue === undefined || whereValue === null)) {
+        setData([]);
+        setLoading(false);
+        return;
+    }
+
     let q: Query | CollectionReference;
     const collectionRef = collection(firestore, collectionName);
 
-    if (options?.where && options.where[2]) {
-      q = query(collectionRef, where(...options.where));
+    if (whereField && whereOp && whereValue !== undefined && whereValue !== null) {
+      q = query(collectionRef, where(whereField, whereOp, whereValue));
     } else {
       q = collectionRef;
     }
@@ -51,16 +65,17 @@ export function useCollection<T extends DocumentData>(
         );
         setData(docs);
         setLoading(false);
+        setError(null);
       },
       (err) => {
-        console.error(err);
+        console.error(`Error fetching collection ${collectionName}:`, err);
         setError(err);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [firestore, collectionName, options?.where?.[0], options?.where?.[1], options?.where?.[2]]);
+  }, [firestore, collectionName, whereField, whereOp, whereValue]);
 
   return { data, loading, error };
 }
