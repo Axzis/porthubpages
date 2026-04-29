@@ -8,11 +8,26 @@ const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-cloudinary.config({
-  cloud_name: cloudName,
-  api_key: apiKey,
-  api_secret: apiSecret,
-});
+// A function to check if the credentials look like valid values and not placeholders.
+const areCredentialsValid = () => {
+  return (
+    cloudName &&
+    !cloudName.includes('YOUR_') &&
+    apiKey &&
+    !apiKey.includes('YOUR_') &&
+    apiSecret &&
+    !apiSecret.includes('YOUR_')
+  );
+};
+
+// Only configure Cloudinary if the credentials are valid to prevent errors on startup.
+if (areCredentialsValid()) {
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+  });
+}
 
 /**
  * Generates a signature for a direct-to-Cloudinary upload.
@@ -27,11 +42,15 @@ cloudinary.config({
  * @returns A promise that resolves to an object containing the signature, timestamp, api_key, and cloud_name.
  */
 export async function getSignedUploadSignature() {
-  if (!apiSecret) {
-    throw new Error('Cloudinary API secret is not configured.');
+  // Add a comprehensive check at the start of the function.
+  // This provides a clear, actionable error message if credentials are not set up.
+  if (!areCredentialsValid()) {
+    throw new Error(
+      'Cloudinary credentials are not configured correctly. Please add CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, and NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to your environment variables in your hosting provider (e.g., Vercel).'
+    );
   }
 
-  // We use a timestamp to ensure the signature is valid only for a short period.
+  // We can be sure apiSecret is defined here because of the check above.
   const timestamp = Math.round(new Date().getTime() / 1000);
 
   // Generate the signature using Cloudinary's utility function.
@@ -40,7 +59,7 @@ export async function getSignedUploadSignature() {
     {
       timestamp: timestamp,
     },
-    apiSecret
+    apiSecret!
   );
 
   return { timestamp, signature, apiKey, cloudName };
