@@ -2,33 +2,6 @@
 
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary with your credentials from environment variables.
-// Ensure these are set in your hosting environment (e.g., Vercel).
-const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const apiKey = process.env.CLOUDINARY_API_KEY;
-const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-// A function to check if the credentials look like valid values and not placeholders.
-const areCredentialsValid = () => {
-  return (
-    cloudName &&
-    !cloudName.includes('YOUR_') &&
-    apiKey &&
-    !apiKey.includes('YOUR_') &&
-    apiSecret &&
-    !apiSecret.includes('YOUR_')
-  );
-};
-
-// Only configure Cloudinary if the credentials are valid to prevent errors on startup.
-if (areCredentialsValid()) {
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-  });
-}
-
 /**
  * Generates a signature for a direct-to-Cloudinary upload.
  *
@@ -39,6 +12,10 @@ if (areCredentialsValid()) {
  * It now also returns the public API key and cloud name, so the client doesn't
  * need to rely on potentially problematic client-side environment variables.
  *
+ * This function now reads environment variables and configures the SDK "just-in-time"
+ * for each request. This is a more robust pattern for serverless environments like
+ * Vercel, preventing potential build-time or cold-start issues with environment variables.
+ *
  * @returns A promise that resolves to an object containing the signature, timestamp, api_key, and cloud_name, or an error.
  */
 export async function getSignedUploadSignature(): Promise<{
@@ -48,16 +25,34 @@ export async function getSignedUploadSignature(): Promise<{
   cloudName?: string;
   error?: string;
 }> {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  const areCredentialsValid =
+    cloudName &&
+    !cloudName.includes('YOUR_') &&
+    apiKey &&
+    !apiKey.includes('YOUR_') &&
+    apiSecret &&
+    !apiSecret.includes('YOUR_');
+
   // Add a comprehensive check at the start of the function.
   // This provides a clear, actionable error message if credentials are not set up.
-  if (!areCredentialsValid()) {
+  if (!areCredentialsValid) {
     return {
       error:
         'Cloudinary credentials are not configured correctly. Please add CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, and NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to your environment variables in your hosting provider (e.g., Vercel).',
     };
   }
+  
+  // Configure Cloudinary right before using it.
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+  });
 
-  // We can be sure apiSecret is defined here because of the check above.
   const timestamp = Math.round(new Date().getTime() / 1000);
 
   // Generate the signature using Cloudinary's utility function.
@@ -66,8 +61,8 @@ export async function getSignedUploadSignature(): Promise<{
     {
       timestamp: timestamp,
     },
-    apiSecret!
+    apiSecret
   );
 
-  return { timestamp, signature, apiKey: apiKey!, cloudName: cloudName! };
+  return { timestamp, signature, apiKey: apiKey, cloudName: cloudName };
 }
