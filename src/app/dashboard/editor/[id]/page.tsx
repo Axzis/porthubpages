@@ -195,7 +195,12 @@ export default function EditorPage() {
       const result = await getSignedUploadSignature();
       
       if (result.error) {
-        throw new Error(result.error);
+        toast({
+          variant: 'destructive',
+          title: 'Upload failed',
+          description: result.error,
+        });
+        return;
       }
       
       const { timestamp, signature, apiKey, cloudName } = result;
