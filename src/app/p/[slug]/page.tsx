@@ -24,7 +24,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
   return (
     <div className={themeClass}>
       <AOSInitializer />
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
         <main className="flex-grow">
           {page.sections.filter(s => s.enabled).map(section => {
             
@@ -35,9 +35,21 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                   <section key={section.id} data-aos="fade-up" className="text-center py-20 px-4">
                     <h1 className="text-5xl font-bold font-headline">{heroSection.headline}</h1>
                     {heroSection.subheadline && <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto">{heroSection.subheadline}</p>}
+                     <div className="mt-8 flex justify-center gap-4">
+                        {heroSection.primaryCta?.label && (
+                           <Button size="lg" asChild>
+                             <Link href={heroSection.primaryCta.url || '#'}>{heroSection.primaryCta.label}</Link>
+                           </Button>
+                        )}
+                        {heroSection.secondaryCta?.label && (
+                            <Button size="lg" variant="outline" asChild>
+                              <Link href={heroSection.secondaryCta.url || '#'}>{heroSection.secondaryCta.label}</Link>
+                            </Button>
+                        )}
+                    </div>
                     {heroSection.imageUrl && (
-                      <div className="mt-8 relative h-96 w-full max-w-4xl mx-auto rounded-lg overflow-hidden">
-                        <Image src={heroSection.imageUrl} alt={heroSection.headline} layout="fill" objectFit="cover" />
+                      <div className="mt-8 relative h-96 w-full max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl">
+                        <Image src={heroSection.imageUrl} alt={heroSection.headline} fill style={{objectFit:"cover"}} priority />
                       </div>
                     )}
                   </section>
@@ -53,8 +65,8 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                         {(featuresSection.items || []).map((item, index) => (
                           <div key={index} className="flex flex-col items-center text-center">
                             {item.imageUrl && (
-                              <div className="relative h-40 w-40 mb-4 rounded-full overflow-hidden">
-                                <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" />
+                              <div className="relative h-40 w-40 mb-4 rounded-full overflow-hidden bg-muted">
+                                <Image src={item.imageUrl} alt={item.title} fill style={{objectFit:"cover"}} />
                               </div>
                             )}
                             <h3 className="text-xl font-bold">{item.title}</h3>
@@ -74,7 +86,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                               <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
                                   {(gallerySection.images || []).map((image, index) => (
                                       <div key={index} className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
-                                          <Image src={image.url} alt={image.alt} layout="fill" objectFit="cover" />
+                                          <Image src={image.url} alt={image.alt} fill style={{objectFit:"cover"}} />
                                       </div>
                                   ))}
                               </div>
@@ -95,7 +107,7 @@ export default async function PublicPage({ params }: { params: { slug: string } 
                                               <div className="mt-4 flex items-center gap-3">
                                                   {item.avatarUrl && (
                                                       <div className="relative h-12 w-12 rounded-full overflow-hidden bg-muted">
-                                                          <Image src={item.avatarUrl} alt={item.author} layout="fill" objectFit="cover" />
+                                                          <Image src={item.avatarUrl} alt={item.author} fill style={{objectFit:"cover"}} />
                                                       </div>
                                                   )}
                                                   <p className="font-semibold">{item.author}</p>

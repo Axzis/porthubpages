@@ -1,3 +1,4 @@
 {
-    "framework": "nextjs"
+  "framework": "nextjs",
+  "comment": "This file explicitly tells Vercel which framework to use, ensuring a correct build process."
 }

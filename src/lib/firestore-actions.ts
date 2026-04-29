@@ -16,6 +16,12 @@ import { initializeFirebase } from '@/firebase';
 import type { LandingPage, Lead } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
+/**
+ * Creates a new landing page document in Firestore.
+ * @param userId The ID of the user creating the page.
+ * @param pageData Partial data for the new page.
+ * @returns An object with success status and the new page ID, or an error.
+ */
 export async function createLandingPage(
   userId: string,
   pageData: Partial<Omit<LandingPage, 'id'>>
@@ -28,6 +34,7 @@ export async function createLandingPage(
   const landingPagesRef = collection(firestore, 'landingPages');
 
   try {
+    // Define the default structure for a new landing page
     const newPageData: Omit<LandingPage, 'id' | 'createdAt' | 'updatedAt' | 'publishedAt'> = {
       ownerId: userId,
       pageName: pageData.pageName || 'My New Page',
@@ -46,6 +53,8 @@ export async function createLandingPage(
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    
+    // Revalidate the dashboard path to show the new page
     revalidatePath('/dashboard');
     return { success: true, id: docRef.id };
   } catch (error: any) {
@@ -54,6 +63,12 @@ export async function createLandingPage(
   }
 }
 
+/**
+ * Updates an existing landing page document in Firestore.
+ * @param pageId The ID of the page to update.
+ * @param data The data to update.
+ * @returns An object with success status or an error.
+ */
 export async function updateLandingPage(
   pageId: string,
   data: Partial<LandingPage>
@@ -71,23 +86,32 @@ export async function updateLandingPage(
       updatedAt: serverTimestamp(),
     };
 
-    if (data.status === 'published') {
+    // If the page is being published, set the published timestamp
+    if (data.status === 'published' && data.status !== 'draft') {
       updatePayload.publishedAt = serverTimestamp();
     }
     
     await updateDoc(pageRef, updatePayload);
     
+    // Revalidate relevant paths to reflect changes immediately
     revalidatePath('/dashboard');
     revalidatePath(`/dashboard/editor/${pageId}`);
     if (data.slug) {
       revalidatePath(`/p/${data.slug}`);
     }
+    revalidatePath(`/p/preview/${pageId}`);
+
     return { success: true };
   } catch (error: any) {
     return { error: error.message };
   }
 }
 
+/**
+ * Fetches a single landing page by its public slug.
+ * @param slug The URL slug of the page.
+ * @returns The landing page data or null if not found.
+ */
 export async function getPageBySlug(slug: string): Promise<LandingPage | null> {
   const { firestore } = initializeFirebase();
   const pagesRef = collection(firestore, 'landingPages');
@@ -106,6 +130,13 @@ export async function getPageBySlug(slug: string): Promise<LandingPage | null> {
   }
 }
 
+/**
+ * Adds a new lead from a contact form to Firestore.
+ * @param pageId The ID of the page where the lead was captured.
+ * @param ownerId The ID of the user who owns the page.
+ * @param leadData The data captured from the form.
+ * @returns An object with success status or an error.
+ */
 export async function addLead(
   pageId: string,
   ownerId: string,
@@ -137,6 +168,11 @@ export async function addLead(
   }
 }
 
+/**
+ * Marks a batch of leads as read.
+ * @param leadIds An array of lead IDs to mark as read.
+ * @returns An object with success status or an error.
+ */
 export async function markLeadsAsRead(leadIds: string[]) {
     if (!leadIds || leadIds.length === 0) {
         return { success: true };
@@ -158,6 +194,11 @@ export async function markLeadsAsRead(leadIds: string[]) {
     }
 }
 
+/**
+ * Permanently deletes a landing page and all of its associated leads.
+ * @param pageId The ID of the page to delete.
+ * @returns An object with success status or an error.
+ */
 export async function deleteLandingPage(pageId: string) {
   if (!pageId) {
     return { error: 'Page ID is required.' };
@@ -168,7 +209,7 @@ export async function deleteLandingPage(pageId: string) {
   try {
     const pageRef = doc(firestore, 'landingPages', pageId);
     
-    // Find and delete all associated leads
+    // Find and delete all associated leads in a batch
     const leadsQuery = query(collection(firestore, 'leads'), where('pageId', '==', pageId));
     const leadsSnapshot = await getDocs(leadsQuery);
     

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection } from '@/firebase';
 import { createLandingPage, updateLandingPage, deleteLandingPage } from '@/lib/firestore-actions';
@@ -33,23 +33,60 @@ import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
+/**
+ * The main dashboard page where users can view, create, search, and manage their landing pages.
+ */
 export default function DashboardPage() {
   const { user } = useUser();
-  const {
-    data: landingPages,
-    loading: pagesLoading,
-    error,
-  } = useCollection<LandingPage>('landingPages', { where: ['ownerId', '==', user?.uid] });
-
-  const { data: leads, loading: leadsLoading } = useCollection<Lead>('leads', { where: ['ownerId', '==', user?.uid] });
-
-  const { toast } = useToast();
   const router = useRouter();
+  const { toast } = useToast();
+
+  // State for managing UI interactions
   const [isCreating, setIsCreating] = useState(false);
   const [publishingStates, setPublishingStates] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pageToDelete, setPageToDelete] = useState<LandingPage | null>(null);
 
+  // Firestore hooks to fetch real-time data
+  const {
+    data: landingPages,
+    loading: pagesLoading,
+    error: pagesError,
+  } = useCollection<LandingPage>('landingPages', { where: ['ownerId', '==', user?.uid] });
+
+  const { 
+    data: leads, 
+    loading: leadsLoading 
+  } = useCollection<Lead>('leads', { where: ['ownerId', '==', user?.uid] });
+  
+  const loading = pagesLoading || leadsLoading;
+
+  /**
+   * Memoized calculation to efficiently count unread leads for each page.
+   * This prevents re-calculating on every render, improving performance.
+   */
+  const unreadCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (leadsLoading || !leads) return counts;
+    
+    for (const lead of leads) {
+        if (!lead.isRead) {
+            counts.set(lead.pageId, (counts.get(lead.pageId) || 0) + 1);
+        }
+    }
+    return counts;
+  }, [leads, leadsLoading]);
+
+  /**
+   * Filters landing pages based on the search term.
+   */
+  const filteredPages = landingPages.filter(page => 
+    page.pageName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  /**
+   * Handles the creation of a new landing page.
+   */
   const handleCreatePage = async () => {
     if (!user) return;
     setIsCreating(true);
@@ -74,6 +111,9 @@ export default function DashboardPage() {
     }
   };
 
+  /**
+   * Toggles the publish status of a landing page.
+   */
   const handlePublishToggle = async (page: LandingPage, published: boolean) => {
     setPublishingStates(prev => ({...prev, [page.id]: true}));
     const newStatus = published ? 'published' : 'draft';
@@ -87,6 +127,9 @@ export default function DashboardPage() {
     setPublishingStates(prev => ({...prev, [page.id]: false}));
   }
   
+  /**
+   * Handles the permanent deletion of a landing page and its associated leads.
+   */
   const handleDeletePage = async () => {
     if (!pageToDelete) return;
     const result = await deleteLandingPage(pageToDelete.id);
@@ -104,12 +147,6 @@ export default function DashboardPage() {
     }
     setPageToDelete(null);
   };
-  
-  const loading = pagesLoading || leadsLoading;
-
-  const filteredPages = landingPages.filter(page => 
-    page.pageName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div>
@@ -135,8 +172,8 @@ export default function DashboardPage() {
           <Loader2 className="animate-spin h-8 w-8 text-primary" />
         </div>
       )}
-      {error && (
-        <p className="text-destructive">Error loading pages: {error.message}</p>
+      {pagesError && (
+        <p className="text-destructive">Error loading pages: {pagesError.message}</p>
       )}
 
       {!loading && filteredPages.length === 0 && (
@@ -159,7 +196,7 @@ export default function DashboardPage() {
       {!loading && filteredPages.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredPages.map((page) => {
-            const unreadLeadsCount = leads.filter(lead => lead.pageId === page.id && !lead.isRead).length;
+            const unreadLeadsCount = unreadCounts.get(page.id) || 0;
 
             return (
               <Card key={page.id} className="flex flex-col">
