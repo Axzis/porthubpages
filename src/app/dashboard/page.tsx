@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * The main dashboard page where users can view, create, search, and manage their landing pages.
@@ -148,6 +149,30 @@ export default function DashboardPage() {
     setPageToDelete(null);
   };
 
+  const renderLoadingState = () => (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-4 w-1/3" />
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                    <Skeleton className="h-8 w-24" />
+                    <div className="flex gap-2">
+                        <Skeleton className="h-10 w-10" />
+                        <Skeleton className="h-10 w-10" />
+                        <Skeleton className="h-10 w-10" />
+                    </div>
+                </CardFooter>
+            </Card>
+        ))}
+    </div>
+);
+
   return (
     <div>
       <div className="flex items-center justify-between gap-4 mb-8">
@@ -167,11 +192,8 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {loading && (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="animate-spin h-8 w-8 text-primary" />
-        </div>
-      )}
+      {loading && renderLoadingState()}
+      
       {pagesError && (
         <p className="text-destructive">Error loading pages: {pagesError.message}</p>
       )}
