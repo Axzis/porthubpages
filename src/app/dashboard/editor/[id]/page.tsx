@@ -119,19 +119,22 @@ export default function EditorPage() {
   };
 
   const handleSectionItemChange = (sectionType: LandingSection['type'], itemIndex: number, field: string, value: any) => {
-     setPage(prevPage => {
+    setPage(prevPage => {
         if (!prevPage) return null;
         const newPage = structuredClone(prevPage);
         const section = newPage.sections.find(s => s.type === sectionType) as any;
-        if (section && section.items && section.items[itemIndex]) {
-            section.items[itemIndex][field] = value;
+        if (section) {
+            const itemsArray = section.type === 'pricing' ? section.plans : section.items;
+            if (itemsArray && itemsArray[itemIndex]) {
+                itemsArray[itemIndex][field] = value;
+            }
         }
         return newPage;
     });
-  }
+  };
 
   const addSectionItem = (sectionType: 'features' | 'testimonials' | 'faq' | 'pricing') => {
-      setPage(prevPage => {
+    setPage(prevPage => {
         if (!prevPage) return null;
         const newPage = structuredClone(prevPage);
         const section = newPage.sections.find(s => s.type === sectionType) as any;
@@ -143,27 +146,39 @@ export default function EditorPage() {
                 case 'faq': newItem = { question: 'New Question?', answer: 'An insightful answer.' }; break;
                 case 'pricing': newItem = { name: 'New Plan', price: '$0', features: [], ctaLabel: 'Choose Plan', ctaUrl: '#', highlighted: false }; break;
             }
-            if (section.items) {
-              section.items.push(newItem);
+
+            if (sectionType === 'pricing') {
+                if (section.plans) {
+                    section.plans.push(newItem);
+                } else {
+                    section.plans = [newItem];
+                }
             } else {
-              section.items = [newItem];
+                 if (section.items) {
+                    section.items.push(newItem);
+                } else {
+                    section.items = [newItem];
+                }
             }
         }
         return newPage;
     });
-  }
+  };
 
   const removeSectionItem = (sectionType: 'features' | 'testimonials' | 'faq' | 'pricing', itemIndex: number) => {
-     setPage(prevPage => {
+    setPage(prevPage => {
         if (!prevPage) return null;
         const newPage = structuredClone(prevPage);
         const section = newPage.sections.find(s => s.type === sectionType) as any;
-        if (section && section.items) {
-            section.items.splice(itemIndex, 1);
+        if (section) {
+            const itemsArray = section.type === 'pricing' ? section.plans : section.items;
+            if (itemsArray) {
+                itemsArray.splice(itemIndex, 1);
+            }
         }
         return newPage;
     });
-  }
+  };
   
   /**
    * Handles image uploads using the signed upload flow.
