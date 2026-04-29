@@ -2,7 +2,7 @@
 // This file is for public Firebase configuration, and the values are
 // loaded from environment variables.
 
-// See .env.example for a list of required environment variables.
+// See .env.local for a list of required environment variables.
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
