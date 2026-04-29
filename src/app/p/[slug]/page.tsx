@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ContactForm } from '@/components/landing/contact-form';
 import { AOSInitializer } from '@/components/landing/aos-initializer';
+import { cn } from '@/lib/utils';
 
 // This is the public-facing page for a created landing page.
 export default async function PublicPage({ params }: { params: { slug: string } }) {
@@ -34,9 +35,12 @@ export default async function PublicPage({ params }: { params: { slug: string } 
     : '';
   
   return (
-    <div className={themeClass}>
+    <>
       <AOSInitializer />
-      <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
+      <div className={cn(
+        "flex flex-col min-h-screen bg-background text-foreground font-body",
+        themeClass
+        )}>
         <main className="flex-grow">
           {page.sections.filter(s => s.enabled).map(section => {
             
@@ -222,6 +226,6 @@ export default async function PublicPage({ params }: { params: { slug: string } 
           <p>Powered by PortHub Pages</p>
         </footer>
       </div>
-    </div>
+    </>
   );
 }

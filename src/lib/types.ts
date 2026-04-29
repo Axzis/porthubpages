@@ -21,7 +21,7 @@ export type LandingPage = {
     primaryColor: string;
     font: "inter" | "space-grotesk" | "serif" | "modern";
     layout: "centered" | "split" | "minimal";
-    theme?: "default" | "dark" | "corporate" | "sunrise";
+    theme?: "default" | "dark" | "corporate" | "sunrise" | "midnight" | "mint";
   };
   sections: LandingSection[];
   createdAt: any; // Firestore timestamp

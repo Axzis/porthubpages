@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ContactForm } from '@/components/landing/contact-form';
 import { AOSInitializer } from '@/components/landing/aos-initializer';
+import { cn } from '@/lib/utils';
 
 
 // This is a minimal renderer for the live preview iframe.
@@ -53,7 +54,10 @@ export default function PreviewPage() {
     : '';
 
   return (
-    <div className={`${themeClass} flex flex-col min-h-screen font-body bg-background text-foreground`}>
+    <div className={cn(
+      "flex flex-col min-h-screen font-body bg-background text-foreground",
+      themeClass
+    )}>
         <AOSInitializer />
         <main className="flex-grow">
           {(page.sections || []).filter(s => s.enabled).map(section => {

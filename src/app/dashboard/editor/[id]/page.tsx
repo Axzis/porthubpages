@@ -499,6 +499,8 @@ export default function EditorPage() {
                         <SelectItem value="dark">Dark</SelectItem>
                         <SelectItem value="corporate">Corporate</SelectItem>
                         <SelectItem value="sunrise">Sunrise</SelectItem>
+                        <SelectItem value="midnight">Midnight</SelectItem>
+                        <SelectItem value="mint">Mint</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
