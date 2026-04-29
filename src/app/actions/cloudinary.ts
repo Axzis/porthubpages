@@ -39,15 +39,22 @@ if (areCredentialsValid()) {
  * It now also returns the public API key and cloud name, so the client doesn't
  * need to rely on potentially problematic client-side environment variables.
  *
- * @returns A promise that resolves to an object containing the signature, timestamp, api_key, and cloud_name.
+ * @returns A promise that resolves to an object containing the signature, timestamp, api_key, and cloud_name, or an error.
  */
-export async function getSignedUploadSignature() {
+export async function getSignedUploadSignature(): Promise<{
+  timestamp?: number;
+  signature?: string;
+  apiKey?: string;
+  cloudName?: string;
+  error?: string;
+}> {
   // Add a comprehensive check at the start of the function.
   // This provides a clear, actionable error message if credentials are not set up.
   if (!areCredentialsValid()) {
-    throw new Error(
-      'Cloudinary credentials are not configured correctly. Please add CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, and NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to your environment variables in your hosting provider (e.g., Vercel).'
-    );
+    return {
+      error:
+        'Cloudinary credentials are not configured correctly. Please add CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, and NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to your environment variables in your hosting provider (e.g., Vercel).',
+    };
   }
 
   // We can be sure apiSecret is defined here because of the check above.
@@ -62,5 +69,5 @@ export async function getSignedUploadSignature() {
     apiSecret!
   );
 
-  return { timestamp, signature, apiKey, cloudName };
+  return { timestamp, signature, apiKey: apiKey!, cloudName: cloudName! };
 }

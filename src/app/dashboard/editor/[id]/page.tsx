@@ -192,9 +192,15 @@ export default function EditorPage() {
     try {
       // 1. Get signature, timestamp, api_key, and cloud_name from our server action.
       // This is a secure way to get credentials to the client without exposing them in client-side code.
-      const { timestamp, signature, apiKey, cloudName } = await getSignedUploadSignature();
+      const result = await getSignedUploadSignature();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      const { timestamp, signature, apiKey, cloudName } = result;
 
-      if (!apiKey || !cloudName) {
+      if (!apiKey || !cloudName || !signature || !timestamp) {
         throw new Error("Cloudinary configuration is missing on the server.");
       }
 
